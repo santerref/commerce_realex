@@ -35,6 +35,15 @@ function commerce_realex_remote_commerce_payment_method_settings_form($settings 
     '#required' => TRUE,
   );
 
+  $form['remote_url'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Realex Remote XML URL'),
+    '#description' => t('The Realex URL to submit the order to.'),
+    '#default_value' => isset($settings['remote_url']) ?  $settings['remote_url'] : 'https://epage.payandshop.com/epage-remote.cgi',
+    '#size' => 50,
+    '#required' => TRUE,
+  );
+
   $form['auto_settle'] = array(
     '#type' => 'select',
     '#title' => t('Auto settle flag'),
@@ -147,7 +156,7 @@ function commerce_realex_remote_commerce_payment_method_submit_form_submit($paym
   $request['sha1hash'] = sha1($hash);
 
   // Send the request.
-  $url = 'https://epage.payandshop.com/epage-remote.cgi';
+  $url = $payment_method['settings']['remote_url'];
   $xml = _commerce_realex_build_xml_request($request);
   $response = _commerce_realex_send_request($url, $xml);
 

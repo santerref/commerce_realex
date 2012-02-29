@@ -5,3 +5,5 @@ dependencies[] = commerce
 dependencies[] = commerce_payment
 core = 7.x
 
+files[] = commerce_realex_remote.inc
+
