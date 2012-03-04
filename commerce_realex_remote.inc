@@ -107,11 +107,15 @@ function commerce_realex_remote_commerce_payment_method_submit_form($payment_met
       '#weight' => 10,
     );
 
-    // TODO - fix, where do we get these values?
-    $charge['amount'] = 10;
-    $charge['currency_code'] = 'EUR';
-    debug($pane_values);
+    // Get order info.
+    $wrapper = entity_metadata_wrapper('commerce_order', $order);
+    $charge['amount'] = $wrapper->commerce_order_total->amount->value();
+    $charge['currency_code'] = $wrapper->commerce_order_total->currency_code->value();
 
+    // TODO
+    // $pane_values is empty. Don't have credit card details yet as the user
+    // hasn't completed the form yet. Need another step? Move payment widget to
+    // checkout page?
     $dcc_message = commerce_realex_remote_get_dcc_offer($payment_method, $pane_values, $order, $charge);
     $form['credit_card']['dcc']['dcc_message'] = array(
       '#type' => 'markup',
