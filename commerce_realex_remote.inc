@@ -98,37 +98,6 @@ function commerce_realex_remote_commerce_payment_method_submit_form($payment_met
   // Get credit card fields.
   $form = commerce_payment_credit_card_form($credit_card_settings);
 
-  // Add DCC checkbox.
-  if ($payment_method['settings']['dcc_provider'] != 'none') {
-    $form['credit_card']['dcc'] = array(
-      '#type' => 'fieldset',
-      '#title' => t('Direct Currency Conversion'),
-      '#collapsible' => FALSE,
-      '#weight' => 10,
-    );
-
-    // Get order info.
-    $wrapper = entity_metadata_wrapper('commerce_order', $order);
-    $charge['amount'] = $wrapper->commerce_order_total->amount->value();
-    $charge['currency_code'] = $wrapper->commerce_order_total->currency_code->value();
-
-    // TODO
-    // $pane_values is empty. Don't have credit card details yet as the user
-    // hasn't completed the form yet. Need another step? Move payment widget to
-    // checkout page?
-    $dcc_message = commerce_realex_remote_get_dcc_offer($payment_method, $pane_values, $order, $charge);
-    $form['credit_card']['dcc']['dcc_message'] = array(
-      '#type' => 'markup',
-      '#markup' => '<p>' . $dcc_message . '</p>',
-    );
-
-    $form['credit_card']['dcc']['dcc_accept'] = array(
-      '#type' => 'checkbox',
-      '#title' => t('Yes - charge me in my own currency'),
-      '#required' => FALSE,
-    );
-  }
-
   return $form;
 }
 
@@ -168,7 +137,6 @@ function commerce_realex_remote_commerce_payment_method_submit_form_submit($paym
   $request['auto_settle'] = $payment_method['settings']['auto_settle'];
   $request['dcc_provider'] = $payment_method['settings']['dcc_provider'];
 
-  $request['dcc_accept'] = $pane_values['credit_card']['dcc_accept'];
   $request['chname'] = $pane_values['credit_card']['owner'];
   $request['cctype'] = _commerce_realex_get_card_type($pane_values['credit_card']['type']);
   $request['ccnumber'] = $pane_values['credit_card']['number'];
@@ -202,37 +170,31 @@ function commerce_realex_remote_commerce_payment_method_submit_form_submit($paym
   $request['products'] = implode(',', $products);
 
   // Build sha1 hash.
-  $hash = $request['timestamp'] . '.' . $request['merchantid'] . '.' . $request['orderid'] . '.' . $request['amount'] . '.' . $request['currency'] . '.' . $request['ccnumber'];
-  $sha1hash = sha1($hash);
-  $hash = $sha1hash . '.' . $request['secret'];
-  $request['sha1hash'] = sha1($hash);
+  $request['sha1hash'] = _commerce_realex_build_request_sha1hash($request);
 
-  // DCC Info.
+  // DCC enabled, so get offer rather than processing payment.
   if ($request['dcc_provider'] != 'none') {
-    // Customer does not accept the rate request.
-    if (!$request['dcc_accept']) {
-      $request['dcc'] = TRUE;
-      $request['cardholdercurrency'] = $request['currency'];
-      $request['cardholderamount'] = $request['amount'];
-      $request['cardholderrate'] = 1;
-    }
-    // Customer accepts the rate request.
-    else {
-      $request['dcc'] = TRUE;
-      $request['cardholdercurrency'] = $_SESSION['cardholdercurrency'];
-      $request['cardholderamount'] = $_SESSION['cardholderamount'];
-      $request['cardholderrate'] = $_SESSION['cardholderrate'];
-    }
+    $dcc_message = commerce_realex_remote_get_dcc_offer($payment_method, $pane_values, $order, $charge);
+  }
+  else {
+    commerce_realex_remote_do_auth_request($payment_method, $request, $order);
   }
 
+  return;
+}
+
+/**
+ * Do a payment authorization request.
+ */
+function commerce_realex_remote_do_auth_request($payment_method, $request, &$order) {
   // Send the request.
-  $url = $payment_method['settings']['remote_url'];
   $type = 'auth';
+  $url = $payment_method['settings']['remote_url'];
   $xml = _commerce_realex_remote_build_xml_request($request, $type);
   $response = _commerce_realex_send_request($url, $xml);
 
   // Verify response.
-  $success = _commerce_realex_remote_verify_response($request, $response, $order, $payment_method);
+  $success = _commerce_realex_remote_verify_response($type, $request, $response, $order, $payment_method);
 
   // Successful payment.
   if ($success) {
@@ -244,8 +206,8 @@ function commerce_realex_remote_commerce_payment_method_submit_form_submit($paym
 
   // Payment failure.
   else {
-    drupal_set_message(t('We were unable to process your credit card payment; reason provided by bank: %message. If the problem persists, contact us to complete your order.', array('%message' => $message)), 'warning');
-    watchdog('commerce_realex', 'Payment failed: %message', array('%message' => $message), WATCHDOG_WARNING);
+    drupal_set_message(t('We were unable to process your credit card payment; reason provided by bank: %message. If the problem persists, contact us to complete your order.', array('%message' => $response['message'])), 'warning');
+    watchdog('commerce_realex', 'Payment failed: %message', array('%message' => $response['message']), WATCHDOG_WARNING);
     $_SESSION['realex_failures']++;
     drupal_goto('checkout');
   }
@@ -255,26 +217,7 @@ function commerce_realex_remote_commerce_payment_method_submit_form_submit($paym
 /**
  * Contact Realex to get a DCC offer.
  */
-//function commerce_realex_remote_get_dcc_offer(&$order) {
-function commerce_realex_remote_get_dcc_offer($payment_method, $pane_values, $order, $charge) {
-  // TODO - start
-  /*
-  // Need to decrypt data to get card number.
-  $key = uc_credit_encryption_key();
-  $crypt = new uc_encryption_class;
-
-  // Save the unencrypted CC details for the duration of this request.
-  // In recent versions, we base64_encode() the payment details before
-  // encrypting. We can detect encoded data by the lack of colons,
-  // due to base64's limited character set.
-  $data = $crypt->decrypt($key, $_SESSION['sescrd']);
-  if (strpos($data, ':') === FALSE) {
-    $data = base64_decode($data);
-  }
-  $payment_details = unserialize($data);
-  */
-  // TODO - end
-
+function commerce_realex_remote_get_dcc_offer($payment_method, $pane_values, &$order, $charge) {
   $start_date = sprintf("%02d%02d", $pane_values['credit_card']['start_month'], substr($pane_values['credit_card']['start_year'], -2));
   $expiry_date = sprintf("%02d%02d", $pane_values['credit_card']['exp_month'], substr($pane_values['credit_card']['exp_year'], -2));
 
@@ -311,10 +254,7 @@ function commerce_realex_remote_get_dcc_offer($payment_method, $pane_values, $or
   $request['currency'] = $charge['currency_code'];
 
   // Build sha1 hash.
-  $hash = $request['timestamp'] . '.' . $request['merchantid'] . '.' . $request['orderid'] . '.' . $request['amount'] . '.' . $request['currency'] . '.' . $request['ccnumber'];
-  $sha1hash = sha1($hash);
-  $hash = $sha1hash . '.' . $request['secret'];
-  $request['sha1hash'] = sha1($hash);
+  $request['sha1hash'] = _commerce_realex_build_request_sha1hash($request);
 
   // Send the request.
   $url = $payment_method['settings']['remote_url'];
@@ -323,58 +263,68 @@ function commerce_realex_remote_get_dcc_offer($payment_method, $pane_values, $or
   $response = _commerce_realex_send_request($url, $xml);
 
   // Verify response.
-  $success = _commerce_realex_remote_verify_response($request, $response, $order, $payment_method);
+  $success = _commerce_realex_remote_verify_response($type, $request, $response, $order, $payment_method);
 
-  // Failed to get DCC offer, return.
-  if (!$success) {
-    return '';
+  // Got DCC offer, set up variables.
+  if ($success) {
+    $cardholdercurrency = $response['cardholdercurrency'];
+    $cardholderamount = $response['cardholderamount'];
+    $cardholderamountdisplay = $cardholderamount / 100;
+    $cardholderrate = $response['cardholderrate'];
+    $merchantcurrency = $response['merchantcurrency'];
+    $merchantamount = $response['merchantamount'];
+
+    // Stash these in the session for later use.
+    $_SESSION['cardholdercurrency'] = $cardholdercurrency;
+    $_SESSION['cardholderamount'] = $cardholderamount;
+    $_SESSION['cardholderrate'] = $cardholderrate;
+    $_SESSION['has_dcc_offer'] = TRUE;
+
+    // Save them to the order too.
+    $order->data['cardholdercurrency'] = $cardholdercurrency;
+    $order->data['cardholderamount'] = $cardholderamount;
+    $order->data['cardholderrate'] = $cardholderrate;
+    $order->data['has_dcc_offer'] = TRUE;
+
+    $currency_names = array(
+      'AUD' => t('Austalian Dollars'),
+      'GBP' => t('Pounds Sterling'),
+      'USD' => t('US Dollars'),
+      'CHF' => t('Swiss Francs'),
+      'EUR' => t('Euro'),
+    );
+
+    // Use human friendly names if we have them.
+    if ($currency_names[$cardholdercurrency]) {
+      $cardholdercurrency = $currency_names[$cardholdercurrency];
+    }
+    if ($currency_names[$merchantcurrency]) {
+      $merchantcurrency = $currency_names[$merchantcurrency];
+    }
+
+    $message = t('We notice that your credit card is in @currency.', array('@currency' => $cardholdercurrency)) . '<br />';
+    $message .= t('For your convenience you can opt to have this transaction charged as <br />@cardholderamountdisplay @cardholdercurrency (at an exchange rate of 1.00 @merchantcurrency = @cardholderrate @cardholdercurrency)', array(
+      '@cardholderamountdisplay' => $cardholderamountdisplay,
+      '@cardholdercurrency' => $cardholdercurrency,
+      '@merchantcurrency' => $merchantcurrency,
+      '@cardholderrate' => $cardholderrate,
+      '@cardholdercurrency' => $cardholdercurrency,
+    ));
+    $order->data['commerce_realex_dcc_message'] = $message;
   }
 
-  // Received DCC offer, proceed.
-  $cardholdercurrency = $response['cardholdercurrency'];
-  $cardholderamount = $response['cardholderamount'];
-  $cardholderamountdisplay = $cardholderamount / 100;
-  $cardholderrate = $response['cardholderrate'];
-  $merchantcurrency = $response['merchantcurrency'];
-  $merchantamount = $response['merchantamount'];
-
-  // Stash these in the session for later use.
-  $_SESSION['cardholdercurrency'] = $cardholdercurrency;
-  $_SESSION['cardholderamount'] = $cardholderamount;
-  $_SESSION['cardholderrate'] = $cardholderrate;
-  $_SESSION['has_dcc_offer'] = TRUE;
-
-  $currency_names = array(
-    'AUD' => t('Austalian Dollars'),
-    'GBP' => t('Pounds Sterling'),
-    'USD' => t('US Dollars'),
-    'CHF' => t('Swiss Francs'),
-    'EUR' => t('Euro'),
-  );
-
-  // Use human friendly names if we have them.
-  if ($currency_names[$cardholdercurrency]) {
-    $cardholdercurrency = $currency_names[$cardholdercurrency];
-  }
-  if ($currency_names[$merchantcurrency]) {
-    $merchantcurrency = $currency_names[$merchantcurrency];
+  else {
+    watchdog('commerce_realex', 'DCC offer failed: %message', array('%message' => $response['message']), WATCHDOG_WARNING);
   }
 
-  $message = t('We notice that your credit card is in @currency.', array('@currency' => $cardholdercurrency)) . '<br />';
-  $message .= t('For your convenience you can opt to have this transaction charged as <br />@cardholderamountdisplay @cardholdercurrency (at an exchange rate of 1.00 @merchantcurrency = @cardholderrate @cardholdercurrency)', array(
-    '@cardholderamountdisplay' => $cardholderamountdisplay,
-    '@cardholdercurrency' => $cardholdercurrency,
-    '@merchantcurrency' => $merchantcurrency,
-    '@cardholderrate' => $cardholderrate,
-    '@cardholdercurrency' => $cardholdercurrency,
-  ));
-
-  return $message;
+  return $success;
 }
 
 /**
  * Process the Realex response.
  *
+ * @param $type
+ *   Message response type.
  * @param $response
  *   Parsed response as an array.
  * @param $request
@@ -384,11 +334,12 @@ function commerce_realex_remote_get_dcc_offer($payment_method, $pane_values, $or
  * @param $payment_method
  *   Payment method array.
  */
-function _commerce_realex_remote_verify_response($request, $response, $order, $payment_method) {
+function _commerce_realex_remote_verify_response($type, $request, &$response, $order, $payment_method) {
   if (!isset($response['result'])) {
     watchdog('commerce_realex', 'No results code, something has gone wrong with the transaction.', array(), WATCHDOG_ERROR);
     drupal_goto('checkout/' . $order->order_number . '/payment');
   }
+  debug($response);
 
   $merchantid = $request['merchantid'];
   $secret = $request['secret'];
@@ -396,8 +347,11 @@ function _commerce_realex_remote_verify_response($request, $response, $order, $p
   $timestamp = $response['timestamp'];
   $resultcode = $response['result'];
   $message = $response['message'];
+  if ($response['result'] != '00') {
+    return FALSE;
+  }
   $pasref = $response['pasref'];
-  $authcode = $response['authcode'];
+  $authcode = isset($response['authcode']) ? $response['authcode'] : ''; // Needed for Fexco DCC.
 
   // This digital signature should correspond to the one Realex Payments returns
   // and can therefore be used to verify the message Realex sends back.
@@ -407,28 +361,19 @@ function _commerce_realex_remote_verify_response($request, $response, $order, $p
   $sha1hash = sha1($tmp);
 
   $success = FALSE;
-  $transaction = NULL;
-  switch ($response['result']) {
-    case '00':
-      // Check to see if hashes match or not
-      if ($sha1hash != $response['sha1hash']) {
-        watchdog('commerce_realex', 'Hash match failed for order @order_id.', array('@order_id' => $response['orderid']));
-        drupal_set_message(t("Hashes don't match - response not authenticated!"), 'error');
-        $message = 'Bank connection error, please try again later';
-        $success = FALSE;
-      }
-      else {
-        $success = TRUE;
-      }
-      break;
 
-    default:
-      $success = FALSE;
-      break;
+  // Check to see if hashes match or not
+  if ($sha1hash != $response['sha1hash']) {
+    watchdog('commerce_realex', 'Hash match failed for order @order_id.', array('@order_id' => $response['orderid']));
+    drupal_set_message(t("Hashes don't match - response not authenticated!"), 'error');
+    $response['user_message'] = 'Bank connection error, please try again later';
+  }
+  else {
+    $success = TRUE;
   }
 
   // Unlikely, but just in case they can ever decrypt it to get card number.
-  unset($result['sha1hash']);
+  unset($response['sha1hash']);
 
   return $success;
 }

@@ -38,6 +38,28 @@ function commerce_realex_commerce_payment_method_info() {
 }
 
 /**
+ * Implements hook_commerce_checkout_pane_info().
+ *
+ * Define checkout panes if DCC is enabled.
+ */
+function commerce_realex_commerce_checkout_pane_info() {
+  $checkout_panes = array();
+
+  $checkout_panes['commerce_realex_remote_dcc_pane'] = array(
+    'title' => t('Direct Currency Conversion'),
+    'file' => 'includes/commerce_realex_remote.checkout_pane.inc',
+    'page' => 'checkout',
+    'fieldset' => TRUE,
+    'callbacks' => array(
+      'checkout_form' => 'commerce_realex_remote_dcc_pane_checkout_form',
+      'checkout_form_submit' => 'commerce_realex_remote_dcc_pane_checkout_form_submit',
+    ),
+  );
+
+  return $checkout_panes;
+}
+
+/**
  * Send the request to Realex Payments.
  *
  * @param $url
@@ -67,6 +89,16 @@ function _commerce_realex_send_request($url, $data) {
   $result = $response_obj->record;
 
   return $result;
+}
+
+/**
+ * Build SHA1 hash for request messages.
+ */
+function _commerce_realex_build_request_sha1hash($request) {
+  $hash = $request['timestamp'] . '.' . $request['merchantid'] . '.' . $request['orderid'] . '.' . $request['amount'] . '.' . $request['currency'] . '.' . $request['ccnumber'];
+  $sha1hash = sha1($hash);
+  $hash = $sha1hash . '.' . $request['secret'];
+  return sha1($hash);
 }
 
 /**

@@ -6,4 +6,5 @@ dependencies[] = commerce_payment
 core = 7.x
 
 files[] = commerce_realex_remote.inc
+files[] = includes/commerce_realex_remote.checkout_pane.inc
 
