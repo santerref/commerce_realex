@@ -52,6 +52,7 @@ function commerce_realex_remote_commerce_payment_method_settings_form($settings 
     '#required' => TRUE,
   );
 
+  /*
   $form['dcc_provider'] = array(
     '#type' => 'select',
     '#title' => t('Direct Currency Conversion (DCC)'),
@@ -64,6 +65,7 @@ function commerce_realex_remote_commerce_payment_method_settings_form($settings 
     '#description' => t('Should DCC be available to the user? You must have this preconfigured on your Realex sub-account in advance.'),
     '#default_value' => isset($settings['dcc_provider']) ? $settings['dcc_provider'] : 'none',
   );
+  */
 
   return $form;
 }
@@ -135,7 +137,7 @@ function commerce_realex_remote_commerce_payment_method_submit_form_submit($paym
   $request['account'] = $payment_method['settings']['account_id'];
   $request['secret'] = $payment_method['settings']['shared_secret'];
   $request['auto_settle'] = $payment_method['settings']['auto_settle'];
-  $request['dcc_provider'] = $payment_method['settings']['dcc_provider'];
+  //$request['dcc_provider'] = $payment_method['settings']['dcc_provider'];
 
   $request['chname'] = $pane_values['credit_card']['owner'];
   $request['cctype'] = _commerce_realex_get_card_type($pane_values['credit_card']['type']);
@@ -173,12 +175,12 @@ function commerce_realex_remote_commerce_payment_method_submit_form_submit($paym
   $request['sha1hash'] = _commerce_realex_build_request_sha1hash($request);
 
   // DCC enabled, so get offer rather than processing payment.
-  if ($request['dcc_provider'] != 'none') {
-    $dcc_message = commerce_realex_remote_get_dcc_offer($payment_method, $pane_values, $order, $charge);
-  }
-  else {
+  //if ($request['dcc_provider'] != 'none') {
+   // $dcc_message = commerce_realex_remote_get_dcc_offer($payment_method, $pane_values, $order, $charge);
+  //}
+  //else {
     commerce_realex_remote_do_auth_request($payment_method, $request, $order);
-  }
+  //}
 
   return;
 }

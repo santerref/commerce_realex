@@ -42,6 +42,7 @@ function commerce_realex_commerce_payment_method_info() {
  *
  * Define checkout panes if DCC is enabled.
  */
+/*
 function commerce_realex_commerce_checkout_pane_info() {
   $checkout_panes = array();
 
@@ -58,6 +59,7 @@ function commerce_realex_commerce_checkout_pane_info() {
 
   return $checkout_panes;
 }
+*/
 
 /**
  * Send the request to Realex Payments.
