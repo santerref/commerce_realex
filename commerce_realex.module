@@ -83,7 +83,8 @@ function _commerce_realex_send_request($url, $data) {
   curl_close($ch);
 
   // Tidy it up.
-  $response = preg_replace('/[\s\t\n\r]+/', ' ', $response);
+  $response = preg_replace('/\s+/', ' ', $response);
+  $response = preg_replace("/[\n\r]/", '', $response);
 
   // Parse the XML response.
   $response_obj = new RealexParser($response);
