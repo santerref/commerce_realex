@@ -52,6 +52,16 @@ function commerce_realex_remote_commerce_payment_method_settings_form($settings 
     '#required' => TRUE,
   );
 
+  $form['varref'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Variable reference'),
+    '#description' => t('Any reference you also would like to assign to the customer. This can allow checking, using realscore, of previous transactions by this customer.'),
+    '#default_value' => isset($settings['varref']) ?  $settings['varref'] : '',
+    '#size' => 50,
+    '#required' => FALSE,
+  );
+
+
   /*
   $form['dcc_provider'] = array(
     '#type' => 'select',
@@ -137,6 +147,9 @@ function commerce_realex_remote_commerce_payment_method_submit_form_submit($paym
   $request['account'] = $payment_method['settings']['account_id'];
   $request['secret'] = $payment_method['settings']['shared_secret'];
   $request['auto_settle'] = $payment_method['settings']['auto_settle'];
+  if (!empty($payment_method['settings']['varref'])) {
+    $request['varref'] = $payment_method['settings']['varref'];
+  }
   //$request['dcc_provider'] = $payment_method['settings']['dcc_provider'];
 
   $request['chname'] = $pane_values['credit_card']['owner'];
@@ -161,15 +174,22 @@ function commerce_realex_remote_commerce_payment_method_submit_form_submit($paym
   $request['currency'] = $charge['currency_code'];
   $request['ip_address'] = ip_address();
 
-  // TODO - fix, not line item ids, get product ids!!
   // Get products purchased.
   $products = array();
-  foreach ($order->commerce_line_items as $delta => $line_items) {
-    foreach ($line_items as $id => $line_item) {
-      $products[] = $line_item['line_item_id'];
+  $comments = array();
+  $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+  foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
+    $line_item = $line_item_wrapper->value();
+    // If the line item is a product line item...
+    if (in_array($line_item->type, commerce_product_line_item_types())) {
+      $product = $line_item_wrapper->commerce_product->value();
+      $products[] = $product->product_id;
+      $comments[] = sprintf("%dx %s",$line_item->quantity, $product->title);
     }
   }
+
   $request['products'] = implode(',', $products);
+  $request['comments'][0] = t('Products purchased:') . ' ' . implode(', ', $comments);
 
   // Build sha1 hash.
   $request['sha1hash'] = _commerce_realex_build_request_sha1hash($request);
@@ -202,7 +222,7 @@ function commerce_realex_remote_do_auth_request($payment_method, $request, &$ord
   if ($success) {
     // Save the transaction.
     $transaction = commerce_realex_remote_transaction_save($payment_method, $order, $response);
-    $order->data['commerce_realex_remote'] = $pane_values;
+    //$order->data['commerce_realex_remote'] = $pane_values;
     $order->data['commerce_realex_remote']['transaction'] = $transaction;
   }
 
@@ -243,6 +263,9 @@ function commerce_realex_remote_get_dcc_offer($payment_method, $pane_values, &$o
   $request['account'] = $payment_method['settings']['account_id'];
   $request['secret'] = $payment_method['settings']['shared_secret'];
   $request['auto_settle'] = $payment_method['settings']['auto_settle'];
+  if (!empty($payment_method['settings']['varref'])) {
+    $request['varref'] = $payment_method['settings']['varref'];
+  }
   $request['dcc_provider'] = $payment_method['settings']['dcc_provider'];
 
   $request['chname'] = $pane_values['credit_card']['owner'];
@@ -341,7 +364,6 @@ function _commerce_realex_remote_verify_response($type, $request, &$response, $o
     watchdog('commerce_realex', 'No results code, something has gone wrong with the transaction.', array(), WATCHDOG_ERROR);
     drupal_goto('checkout/' . $order->order_number . '/payment');
   }
-  debug($response);
 
   $merchantid = $request['merchantid'];
   $secret = $request['secret'];
@@ -429,6 +451,16 @@ function _commerce_realex_remote_build_xml_request_auth($request) {
         <amount currency='" . $request['cardholdercurrency'] . "'>" . $request['cardholderamount'] . "</amount>
       </dccinfo>";
   }
+  if (!empty($request['comments']) && is_array($request['comments'])) {
+    $xml .= "
+      <comments>
+        <comment id='1'>" . $request['comments'][0] . "</comment>";
+    if (count($request['comments']) > 1) {
+      $xml .= "<comment id='2'>" . $request['comments'][1] . "</comment>";
+    }
+    $xml .= "
+      </comments>";
+  }
   $xml .= "
     <autosettle flag='" . $request['auto_settle'] . "'/>
     <sha1hash>" . $request['sha1hash'] . "</sha1hash>
@@ -438,7 +470,12 @@ function _commerce_realex_remote_build_xml_request_auth($request) {
       </address>
       <custipaddress>" . $request['ip_address'] . "</custipaddress>
       <custnum>" . $request['customer_id'] . "</custnum>
-      <prodid>" . $request['products'] . "</prodid>
+      <prodid>" . $request['products'] . "</prodid>";
+  if (isset($request['varref'])) {
+    $xml .= "
+      <varref>" . $request['varref'] . "</varref>";
+  }
+  $xml .="
     </tssinfo>
   </request>";
 
