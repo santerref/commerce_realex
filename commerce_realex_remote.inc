@@ -77,6 +77,14 @@ function commerce_realex_remote_commerce_payment_method_settings_form($settings 
   );
   */
 
+  $form['card_types'] = array(
+    '#type' => 'checkboxes',
+    '#title' => t('Available card types'),
+    '#options' => _commerce_realex_supported_card_types(),
+    '#default_value' => isset($settings['card_types']) ? $settings['card_types'] : array(),
+    '#required' => TRUE,
+  );
+
   return $form;
 }
 
@@ -87,20 +95,14 @@ function commerce_realex_remote_commerce_payment_method_settings_form($settings 
  */
 function commerce_realex_remote_commerce_payment_method_submit_form($payment_method, $pane_values, $checkout_pane, $order) {
   module_load_include('inc', 'commerce_payment', 'includes/commerce_payment.credit_card');
+  $supported_card_types = _commerce_realex_supported_card_types();
+  $available_card_types = $payment_method['settings']['card_types'];
+  $card_types = array_intersect(array_keys($supported_card_types), $available_card_types);
 
   // Set which cards are available to the user.
   $credit_card_settings = array(
     'owner' => '',
-    'type' => array(
-      'visa',
-      'mastercard',
-      'amex',
-      'switch',
-      'solo',
-      'delta',
-      'dc',
-      'laser',
-    ),
+    'type' => $card_types,
     'number' => '',
     'start_date' => '',
     'issue' => '',

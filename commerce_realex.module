@@ -118,6 +118,8 @@ function _commerce_realex_get_card_type($card) {
     case 'amex':
       return 'AMEX';
     case 'solo':
+    case 'switch':
+    case 'maestro':
       return 'SWITCH';
     case 'laser':
       return 'LASER';
@@ -128,6 +130,22 @@ function _commerce_realex_get_card_type($card) {
     default:
       return 'VISA';
   }
+}
+
+/**
+ * Retrieve list of card types supported by Realex.
+ */
+function _commerce_realex_supported_card_types() {
+  return array(
+    'visa' => t('Visa'),
+    'mastercard' => t('Mastercard'),
+    'amex' => t('American Express'),
+    'switch' => t('Switch'),
+    'solo' => t('Solo'),
+    'delta' => t('Delta'),
+    'dc' => t("Diner's Club"),
+    'laser' => t('Laser'),
+  );
 }
 
 /**
