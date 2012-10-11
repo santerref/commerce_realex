@@ -77,13 +77,41 @@ function commerce_realex_remote_commerce_payment_method_settings_form($settings 
   );
   */
 
+  $cctypes = _commerce_realex_supported_card_types();
   $form['card_types'] = array(
     '#type' => 'checkboxes',
     '#title' => t('Available card types'),
-    '#options' => _commerce_realex_supported_card_types(),
+    '#options' => $cctypes,
     '#default_value' => isset($settings['card_types']) ? $settings['card_types'] : array(),
     '#required' => TRUE,
   );
+
+  $form['cctype_subaccounts_enabled'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Use separate accounts for each card type'),
+    '#description' => t('Some configurations require different accounts to be used for different card types.'),
+    '#default_value' => isset($settings['cctype_subaccounts_enabled']) ? $settings['cctype_subaccounts_enabled'] : array(),
+  );
+
+  $form['cctype_accounts'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Realex card type account settings'),
+    '#collapsible' => TRUE,
+    '#collapsed' => FALSE,
+    '#states' => array(
+      'visible' => array(
+        ':input[name="parameter[payment_method][settings][payment_method][settings][cctype_subaccounts_enabled]"]' => array('checked' => TRUE),
+      ),
+    ),
+  );
+  foreach ($cctypes as $cctype => $label) {
+    $form['cctype_accounts'][$cctype] = array(
+      '#type' => 'textfield',
+      '#title' => t('@cctype account', array('@cctype' => $label)),
+      '#default_value' => !empty($settings['cctype_accounts'][$cctype]) ? $settings['cctype_accounts'][$cctype] : '',
+      '#required' => FALSE,
+    );
+  }
 
   return $form;
 }
@@ -179,6 +207,12 @@ function commerce_realex_remote_commerce_payment_method_submit_form_submit($paym
   $request['start_date'] = $start_date;
   $request['expiry_date'] = $expiry_date;
 
+  // Sub-accounts can differ by card type
+  if ($payment_method['settings']['cctype_subaccounts_enabled']) {
+    $subaccount = $payment_method['settings']['cctype_accounts'][$pane_values['credit_card']['type']];
+    $request['account'] = !empty($subaccount) ? $subaccount : $request['account'];
+  }
+
   // Load the customer profile for the order.
   $profile = commerce_customer_profile_load($order->commerce_customer_billing['und'][0]['profile_id']);
   $address = $profile->commerce_customer_address['und'][0];
@@ -249,6 +283,9 @@ function commerce_realex_remote_do_auth_request($payment_method, $request, &$ord
   else {
     drupal_set_message(t('We were unable to process your credit card payment; reason provided by bank: %message. If the problem persists, contact us to complete your order.', array('%message' => $response['message'])), 'warning');
     watchdog('commerce_realex', 'Payment failed: %message', array('%message' => $response['message']), WATCHDOG_WARNING);
+    if (empty($_SESSION['realex_failures'])) {
+      $_SESSION['realex_failures'] = 0;
+    }
     $_SESSION['realex_failures']++;
     drupal_goto('checkout');
   }
