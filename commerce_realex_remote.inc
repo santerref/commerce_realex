@@ -104,7 +104,7 @@ function commerce_realex_remote_commerce_payment_method_submit_form($payment_met
     'owner' => '',
     'type' => $card_types,
     'number' => '',
-    'start_date' => '',
+    'start_date' => NULL,
     'issue' => '',
     'code' => '',
   );
