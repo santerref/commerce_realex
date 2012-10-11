@@ -160,7 +160,7 @@ function commerce_realex_remote_commerce_payment_method_submit_form_submit($paym
   $request['chname'] = $pane_values['credit_card']['owner'];
   $request['cctype'] = _commerce_realex_get_card_type($pane_values['credit_card']['type']);
   $request['ccnumber'] = $pane_values['credit_card']['number'];
-  $request['cvn'] = $pane_values['credit_card']['code'];
+  $request['cvn'] = isset($pane_values['credit_card']['code']) ? $pane_values['credit_card']['code'] : NULL;
   $request['issueno'] = isset($pane_values['credit_card']['issue']) ? $pane_values['credit_card']['issue'] : '';
   $request['start_date'] = $start_date;
   $request['expiry_date'] = $expiry_date;
@@ -169,12 +169,12 @@ function commerce_realex_remote_commerce_payment_method_submit_form_submit($paym
   $profile = commerce_customer_profile_load($order->commerce_customer_billing['und'][0]['profile_id']);
   $address = $profile->commerce_customer_address['und'][0];
   $request['customer_id'] = $order->commerce_customer_billing['und'][0]['profile_id'];
-  $request['customer_name'] = $address['name_line'];
-  $request['street_one'] = $address['thoroughfare'];
-  $request['postcode'] = $address['postal_code'];
-  $request['city'] = $address['locality'];
-  $request['region'] = $address['administrative_area'];
-  $request['country'] = $address['country'];
+  $request['customer_name'] = isset($address['name_line']) ? $address['name_line'] : '';
+  $request['street_one'] = isset($address['thoroughfare']) ? $address['thoroughfare'] : '';
+  $request['postcode'] = isset($address['postal_code']) ? $address['postal_code'] : '';
+  $request['city'] = isset($address['locality']) ? $address['locality'] : '';
+  $request['region'] = isset($address['administrative_area']) ? $address['administrative_area'] : '';
+  $request['country'] = isset($address['country']) ? $address['country'] : '';
   $request['amount'] = $charge['amount'];
   $request['currency'] = $charge['currency_code'];
   $request['ip_address'] = ip_address();
@@ -279,7 +279,7 @@ function commerce_realex_remote_get_dcc_offer($payment_method, $pane_values, &$o
   $request['chname'] = $pane_values['credit_card']['owner'];
   $request['cctype'] = _commerce_realex_get_card_type($pane_values['credit_card']['type']);
   $request['ccnumber'] = $pane_values['credit_card']['number'];
-  $request['cvn'] = $pane_values['credit_card']['code'];
+  $request['cvn'] = isset($pane_values['credit_card']['code']) ? $pane_values['credit_card']['code'] : NULL;
   $request['issueno'] = isset($pane_values['credit_card']['issue']) ? $pane_values['credit_card']['issue'] : '';
   $request['start_date'] = $start_date;
   $request['expiry_date'] = $expiry_date;
