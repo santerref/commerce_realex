@@ -126,7 +126,21 @@ function commerce_realex_remote_commerce_payment_method_submit_form_validate($pa
   $settings = array(
     'form_parents' => array_merge($form_parents, array('credit_card')),
   );
+  $prefix = implode('][', $settings['form_parents']) . '][';
 
+  $card_type = $pane_values['credit_card']['type'];
+  if ($card_type == 'switch') {
+    if (empty($pane_values['credit_card']['issue'])) {
+      form_set_error($prefix . 'issue', t('Issue number field is required.'));
+      return FALSE;
+    }
+  }
+  elseif ($card_type != 'laser') {
+    if (empty($pane_values['credit_card']['code'])) {
+      form_set_error($prefix . 'code', t('Security code field is required.'));
+      return FALSE;
+    }
+  }
   if (!commerce_payment_credit_card_validate($pane_values['credit_card'], $settings)) {
     return FALSE;
   }
