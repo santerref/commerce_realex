@@ -52,7 +52,10 @@ return;
   // TODO: get $pane_values['credit_card']
   $payment_method = commerce_payment_method_instance_load($order->data['payment_method']);
 
-  $start_date = sprintf("%02d%02d", $pane_values['credit_card']['start_month'], substr($pane_values['credit_card']['start_year'], -2));
+  $start_date = NULL;
+  if (!empty($pane_values['credit_card']['start_month'])) {
+    $start_date = sprintf("%02d%02d", $pane_values['credit_card']['start_month'], substr($pane_values['credit_card']['start_year'], -2));
+  }
   $expiry_date = sprintf("%02d%02d", $pane_values['credit_card']['exp_month'], substr($pane_values['credit_card']['exp_year'], -2));
 
   $request = array();

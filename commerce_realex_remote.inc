@@ -136,7 +136,10 @@ function commerce_realex_remote_commerce_payment_method_submit_form_validate($pa
  * Implements hook_commerce_payment_method_submit_form_submit().
  */
 function commerce_realex_remote_commerce_payment_method_submit_form_submit($payment_method, $pane_form, $pane_values, &$order, $charge) {
-  $start_date = sprintf("%02d%02d", $pane_values['credit_card']['start_month'], substr($pane_values['credit_card']['start_year'], -2));
+  $start_date = NULL;
+  if (!empty($pane_values['credit_card']['start_month'])) {
+    $start_date = sprintf("%02d%02d", $pane_values['credit_card']['start_month'], substr($pane_values['credit_card']['start_year'], -2));
+  }
   $expiry_date = sprintf("%02d%02d", $pane_values['credit_card']['exp_month'], substr($pane_values['credit_card']['exp_year'], -2));
 
   $request = array();
@@ -242,7 +245,10 @@ function commerce_realex_remote_do_auth_request($payment_method, $request, &$ord
  * Contact Realex to get a DCC offer.
  */
 function commerce_realex_remote_get_dcc_offer($payment_method, $pane_values, &$order, $charge) {
-  $start_date = sprintf("%02d%02d", $pane_values['credit_card']['start_month'], substr($pane_values['credit_card']['start_year'], -2));
+  $start_date = NULL;
+  if (!empty($pane_values['credit_card']['start_month'])) {
+    $start_date = sprintf("%02d%02d", $pane_values['credit_card']['start_month'], substr($pane_values['credit_card']['start_year'], -2));
+  }
   $expiry_date = sprintf("%02d%02d", $pane_values['credit_card']['exp_month'], substr($pane_values['credit_card']['exp_year'], -2));
 
   $request = array();

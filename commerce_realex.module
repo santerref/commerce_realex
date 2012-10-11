@@ -142,6 +142,7 @@ function _commerce_realex_supported_card_types() {
     'amex' => t('American Express'),
     'switch' => t('Switch'),
     'solo' => t('Solo'),
+    'maestro' => t('Maestro'),
     'delta' => t('Delta'),
     'dc' => t("Diner's Club"),
     'laser' => t('Laser'),
