@@ -197,6 +197,9 @@ function commerce_realex_remote_commerce_payment_method_submit_form_submit($paym
   if (!empty($payment_method['settings']['varref'])) {
     $request['varref'] = $payment_method['settings']['varref'];
   }
+  // Allow other modules to alter the variable reference - used to tag orders.
+  drupal_alter('commerce_realex_varref', &$request['varref'], $order);
+
   //$request['dcc_provider'] = $payment_method['settings']['dcc_provider'];
 
   $request['chname'] = $pane_values['credit_card']['owner'];
