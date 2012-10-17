@@ -198,7 +198,7 @@ function commerce_realex_remote_commerce_payment_method_submit_form_submit($paym
     $request['varref'] = $payment_method['settings']['varref'];
   }
   // Allow other modules to alter the variable reference - used to tag orders.
-  drupal_alter('commerce_realex_varref', &$request['varref'], $order);
+  drupal_alter('commerce_realex_varref', $request['varref'], $order);
 
   //$request['dcc_provider'] = $payment_method['settings']['dcc_provider'];
 
