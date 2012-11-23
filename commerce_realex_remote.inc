@@ -190,42 +190,43 @@ function commerce_realex_remote_commerce_payment_method_submit_form_submit($paym
 
   $request['order_number'] = $order->order_number;
   $request['orderid'] = $request['order_number'] . $request['timestamp'];
-  $request['merchantid'] = $payment_method['settings']['merchant_id'];
-  $request['account'] = $payment_method['settings']['account_id'];
-  $request['secret'] = $payment_method['settings']['shared_secret'];
+  $request['merchantid'] = check_plain($payment_method['settings']['merchant_id']);
+  $request['account'] = check_plain($payment_method['settings']['account_id']);
+  $request['secret'] = check_plain($payment_method['settings']['shared_secret']);
   $request['auto_settle'] = $payment_method['settings']['auto_settle'];
   if (!empty($payment_method['settings']['varref'])) {
     $request['varref'] = $payment_method['settings']['varref'];
   }
   // Allow other modules to alter the variable reference - used to tag orders.
   drupal_alter('commerce_realex_varref', $request['varref'], $order);
+  $request['varref'] = check_plain($request['varref']);
 
   //$request['dcc_provider'] = $payment_method['settings']['dcc_provider'];
 
-  $request['chname'] = $pane_values['credit_card']['owner'];
+  $request['chname'] = check_plain($pane_values['credit_card']['owner']);
   $request['cctype'] = _commerce_realex_get_card_type($pane_values['credit_card']['type']);
-  $request['ccnumber'] = $pane_values['credit_card']['number'];
-  $request['cvn'] = isset($pane_values['credit_card']['code']) ? $pane_values['credit_card']['code'] : NULL;
-  $request['issueno'] = isset($pane_values['credit_card']['issue']) ? $pane_values['credit_card']['issue'] : '';
-  $request['start_date'] = $start_date;
-  $request['expiry_date'] = $expiry_date;
+  $request['ccnumber'] = check_plain($pane_values['credit_card']['number']);
+  $request['cvn'] = isset($pane_values['credit_card']['code']) ? check_plain($pane_values['credit_card']['code']) : NULL;
+  $request['issueno'] = isset($pane_values['credit_card']['issue']) ? check_plain($pane_values['credit_card']['issue']) : '';
+  $request['start_date'] = check_plain($start_date);
+  $request['expiry_date'] = check_plain($expiry_date);
 
   // Sub-accounts can differ by card type
   if ($payment_method['settings']['cctype_subaccounts_enabled']) {
     $subaccount = $payment_method['settings']['cctype_accounts'][$pane_values['credit_card']['type']];
-    $request['account'] = !empty($subaccount) ? $subaccount : $request['account'];
+    $request['account'] = !empty($subaccount) ? check_plain($subaccount) : $request['account'];
   }
 
   // Load the customer profile for the order.
   $profile = commerce_customer_profile_load($order->commerce_customer_billing['und'][0]['profile_id']);
   $address = $profile->commerce_customer_address['und'][0];
   $request['customer_id'] = $order->commerce_customer_billing['und'][0]['profile_id'];
-  $request['customer_name'] = isset($address['name_line']) ? $address['name_line'] : '';
-  $request['street_one'] = isset($address['thoroughfare']) ? $address['thoroughfare'] : '';
-  $request['postcode'] = isset($address['postal_code']) ? $address['postal_code'] : '';
-  $request['city'] = isset($address['locality']) ? $address['locality'] : '';
-  $request['region'] = isset($address['administrative_area']) ? $address['administrative_area'] : '';
-  $request['country'] = isset($address['country']) ? $address['country'] : '';
+  $request['customer_name'] = isset($address['name_line']) ? check_plain($address['name_line']) : '';
+  $request['street_one'] = isset($address['thoroughfare']) ? check_plain($address['thoroughfare']) : '';
+  $request['postcode'] = isset($address['postal_code']) ? check_plain($address['postal_code']) : '';
+  $request['city'] = isset($address['locality']) ? check_plain($address['locality']) : '';
+  $request['region'] = isset($address['administrative_area']) ? check_plain($address['administrative_area']) : '';
+  $request['country'] = isset($address['country']) ? check_plain($address['country']) : '';
   $request['amount'] = $charge['amount'];
   $request['currency'] = $charge['currency_code'];
   $request['ip_address'] = ip_address();
@@ -240,7 +241,7 @@ function commerce_realex_remote_commerce_payment_method_submit_form_submit($paym
     if (in_array($line_item->type, commerce_product_line_item_types())) {
       $product = $line_item_wrapper->commerce_product->value();
       $products[] = $product->product_id;
-      $comments[] = sprintf("%dx %s",$line_item->quantity, $product->title);
+      $comments[] = sprintf("%dx %s",$line_item->quantity, check_plain($product->title));
     }
   }
 
@@ -321,22 +322,26 @@ function commerce_realex_remote_get_dcc_offer($payment_method, $pane_values, &$o
 
   $request['order_number'] = $order->order_number;
   $request['orderid'] = $request['order_number'] . $request['timestamp'];
-  $request['merchantid'] = $payment_method['settings']['merchant_id'];
-  $request['account'] = $payment_method['settings']['account_id'];
-  $request['secret'] = $payment_method['settings']['shared_secret'];
+  $request['merchantid'] = check_plain($payment_method['settings']['merchant_id']);
+  $request['account'] = check_plain($payment_method['settings']['account_id']);
+  $request['secret'] = check_plain($payment_method['settings']['shared_secret']);
   $request['auto_settle'] = $payment_method['settings']['auto_settle'];
   if (!empty($payment_method['settings']['varref'])) {
     $request['varref'] = $payment_method['settings']['varref'];
   }
-  $request['dcc_provider'] = $payment_method['settings']['dcc_provider'];
+  // Allow other modules to alter the variable reference - used to tag orders.
+  drupal_alter('commerce_realex_varref', $request['varref'], $order);
+  $request['varref'] = check_plain($request['varref']);
 
-  $request['chname'] = $pane_values['credit_card']['owner'];
+  $request['dcc_provider'] = check_plain($payment_method['settings']['dcc_provider']);
+
+  $request['chname'] = check_plain($pane_values['credit_card']['owner']);
   $request['cctype'] = _commerce_realex_get_card_type($pane_values['credit_card']['type']);
-  $request['ccnumber'] = $pane_values['credit_card']['number'];
-  $request['cvn'] = isset($pane_values['credit_card']['code']) ? $pane_values['credit_card']['code'] : NULL;
-  $request['issueno'] = isset($pane_values['credit_card']['issue']) ? $pane_values['credit_card']['issue'] : '';
-  $request['start_date'] = $start_date;
-  $request['expiry_date'] = $expiry_date;
+  $request['ccnumber'] = check_plain($pane_values['credit_card']['number']);
+  $request['cvn'] = isset($pane_values['credit_card']['code']) ? check_plain($pane_values['credit_card']['code']) : NULL;
+  $request['issueno'] = isset($pane_values['credit_card']['issue']) ? check_plain($pane_values['credit_card']['issue']) : '';
+  $request['start_date'] = check_plain($start_date);
+  $request['expiry_date'] = check_plain($expiry_date);
   $request['amount'] = $charge['amount'];
   $request['currency'] = $charge['currency_code'];
 
