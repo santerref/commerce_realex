@@ -60,7 +60,7 @@ function commerce_realex_remote_commerce_payment_method_settings_form($settings 
       '#required' => TRUE,
       '#states' => array(
         'visible' => array(
-          ':input[name="3dsecure"]' => array('checked' => TRUE),
+          ':input[name="parameter[payment_method][settings][payment_method][settings][3dsecure]"]' => array('checked' => TRUE),
         ),
       ),
     );
