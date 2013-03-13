@@ -44,6 +44,37 @@ function commerce_realex_remote_commerce_payment_method_settings_form($settings 
     '#required' => TRUE,
   );
 
+  if (module_exists('commerce_3d_secure')) {
+    $form['3dsecure'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Use 3D Secure'),
+      '#default_value' => isset($settings['3dsecure']) ? $settings['3dsecure'] : 0,
+    );
+
+    $form['3dsecure_remote_url'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Realex 3D Secure XML URL'),
+      '#description' => t('The Realex URL to submit the order to.'),
+      '#default_value' => isset($settings['3dsecure_remote_url']) ? $settings['3dsecure_remote_url'] : 'https://epage.payandshop.com/epage-3dsecure.cgi',
+      '#size' => 50,
+      '#required' => TRUE,
+      '#states' => array(
+        'visible' => array(
+          ':input[name="3dsecure"]' => array('checked' => TRUE),
+        ),
+      ),
+    );
+  }
+  else {
+    $form['3dsecure'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Use 3D Secure'),
+      '#default_value' => 0,
+      '#attributes' => array('disabled' => 'disabled'),
+      '#description' => t('Enable the Commerce 3D Secure module if you wish to enable 3D Secure transactions for Realex.'),
+    );
+  }
+
   $form['auto_settle'] = array(
     '#type' => 'select',
     '#title' => t('Auto settle flag'),
@@ -201,6 +232,8 @@ function commerce_realex_remote_commerce_payment_method_submit_form_submit($paym
   drupal_alter('commerce_realex_varref', $request['varref'], $order);
   $request['varref'] = check_plain($request['varref']);
 
+  $request['3dsecure'] = (module_exists('commerce_3d_secure') ?  $payment_method['settings']['3dsecure']: 0);
+
   //$request['dcc_provider'] = $payment_method['settings']['dcc_provider'];
 
   $request['chname'] = check_plain($pane_values['credit_card']['owner']);
@@ -218,15 +251,24 @@ function commerce_realex_remote_commerce_payment_method_submit_form_submit($paym
   }
 
   // Load the customer profile for the order.
-  $profile = commerce_customer_profile_load($order->commerce_customer_billing['und'][0]['profile_id']);
-  $address = $profile->commerce_customer_address['und'][0];
-  $request['customer_id'] = $order->commerce_customer_billing['und'][0]['profile_id'];
-  $request['customer_name'] = isset($address['name_line']) ? check_plain($address['name_line']) : '';
-  $request['street_one'] = isset($address['thoroughfare']) ? check_plain($address['thoroughfare']) : '';
-  $request['postcode'] = isset($address['postal_code']) ? check_plain($address['postal_code']) : '';
-  $request['city'] = isset($address['locality']) ? check_plain($address['locality']) : '';
-  $request['region'] = isset($address['administrative_area']) ? check_plain($address['administrative_area']) : '';
-  $request['country'] = isset($address['country']) ? check_plain($address['country']) : '';
+  if (!empty($order->commerce_customer_billing)) {
+    $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+    $profile = $order_wrapper->commerce_customer_billing->value();
+    $profile_wrapper = entity_metadata_wrapper('commerce_customer_profile', $profile);
+    $address = $profile_wrapper->commerce_customer_address->value();
+    $request['customer_id'] = $profile->profile_id;
+    if (isset($address['name_line'])) {
+      $request['customer_name'] = check_plain($address['name_line']);
+    }
+    elseif (isset($address['first_name'])) {
+      $request['customer_name'] = check_plain($address['first_name'] . ' ' .  $address['last_name']);
+    }
+    $request['street_one'] = isset($address['thoroughfare']) ? check_plain($address['thoroughfare']) : '';
+    $request['postcode'] = isset($address['postal_code']) ? check_plain($address['postal_code']) : '';
+    $request['city'] = isset($address['locality']) ? check_plain($address['locality']) : '';
+    $request['region'] = isset($address['administrative_area']) ? check_plain($address['administrative_area']) : '';
+    $request['country'] = isset($address['country']) ? check_plain($address['country']) : '';
+  }
   $request['amount'] = $charge['amount'];
   $request['currency'] = $charge['currency_code'];
   $request['ip_address'] = ip_address();
@@ -251,13 +293,20 @@ function commerce_realex_remote_commerce_payment_method_submit_form_submit($paym
   // Build sha1 hash.
   $request['sha1hash'] = _commerce_realex_build_request_sha1hash($request);
 
+  // 3D Secure transaction.
+  if ($request['3dsecure'] && module_exists('commerce_3d_secure')) {
+    commerce_realex_remote_do_3dsecure_verify_enrolled_request($payment_method, $request, $order);
+  }
+
   // DCC enabled, so get offer rather than processing payment.
-  //if ($request['dcc_provider'] != 'none') {
+  //elseif ($request['dcc_provider'] != 'none') {
    // $dcc_message = commerce_realex_remote_get_dcc_offer($payment_method, $pane_values, $order, $charge);
   //}
-  //else {
+
+  // Standard authorisation.
+  else {
     commerce_realex_remote_do_auth_request($payment_method, $request, $order);
-  //}
+  }
 
   return;
 }
@@ -281,20 +330,213 @@ function commerce_realex_remote_do_auth_request($payment_method, $request, &$ord
     $transaction = commerce_realex_remote_transaction_save($payment_method, $order, $response);
     //$order->data['commerce_realex_remote'] = $pane_values;
     $order->data['commerce_realex_remote']['transaction'] = $transaction;
+    $redirect_url = 'commerce-realex/complete/' . $order->order_number;
+    commerce_3d_secure_clear_iframe($redirect_url);
+  }
+
+  // Unsuccessful payments.
+  else {
+    // Payment failure.
+    if (!isset($order->data['extra_authorisation'])) {
+      drupal_set_message(t('We were unable to process your credit card payment; reason provided by bank: %message. If the problem persists, contact us to complete your order.', array('%message' => $response['message'])), 'warning');
+      watchdog('commerce_realex', 'Payment failed: %message', array('%message' => $response['message']), WATCHDOG_WARNING);
+      drupal_goto('checkout');
+      if (empty($_SESSION['realex_failures'])) {
+        $_SESSION['realex_failures'] = 0;
+      }
+      $_SESSION['realex_failures']++;
+    }
+    // 3D secure failure.
+    elseif (isset($request['cavv'])) {
+      $redirect = 'commerce-realex/payment/' . $order->order_number;
+      commerce_3d_secure_clear_iframe($redirect);
+    }
+  }
+}
+
+
+/**
+ * Do a 3D Secure verify enrolled request.
+ */
+function commerce_realex_remote_do_3dsecure_verify_enrolled_request($payment_method, $request, &$order) {
+  // Send the request.
+  $type = '3ds-verifyenrolled';
+  $url = $payment_method['settings']['3dsecure_remote_url'];
+  $xml = _commerce_realex_remote_build_xml_request($request, $type);
+  $response = _commerce_realex_send_request($url, $xml);
+
+  // Verify response.
+  $success = _commerce_realex_remote_verify_response($type, $request, $response, $order, $payment_method);
+
+  // Successful payment.
+  if ($success) {
+    // Create a $md variable which is a string of useful information that will be mirrored in the 3d process.
+    $md = 'payment_method_id=' . $payment_method['method_id'] . '&orderid=' . $response['orderid'] . '&ccnumber=' . $request['ccnumber'] . '&chname=' . $request['chname'] . '&cctype=' . $request['cctype'] . '&currency=' . $request['currency'] . '&amount=' . $request['amount'] . '&expiry_date=' . $request['expiry_date'];
+    // @TODO sort encryption
+    // $key = 'realex' . $response['pareq'] . 'commerce';
+    // $md = base64_encode(mcrypt_encrypt(MCRYPT_RIJNDAEL_256, md5($key), $md, MCRYPT_MODE_CBC, md5(md5($key))));
+
+    // Save the data to process the 3D Secure response.
+    $secure_data = array();
+    $secure_data['PaReq'] = $response['pareq'];
+    $secure_data['ACSURL'] = $response['url']; // URL to use.
+    $secure_data['MD'] = $md; // Merchant data.
+    // The URL that the ACS should reply to.
+    $secure_data['TermUrl'] = url('commerce-realex/3d-secure-callback/' . $order->order_id, array('absolute' => TRUE));
+    // Add the 3D Secure info to the order object.
+    $order->data['extra_authorisation'] = $secure_data;
   }
 
   // Payment failure.
   else {
-    drupal_set_message(t('We were unable to process your credit card payment; reason provided by bank: %message. If the problem persists, contact us to complete your order.', array('%message' => $response['message'])), 'warning');
-    watchdog('commerce_realex', 'Payment failed: %message', array('%message' => $response['message']), WATCHDOG_WARNING);
-    if (empty($_SESSION['realex_failures'])) {
-      $_SESSION['realex_failures'] = 0;
+    // Cardholder is not enrolled.
+    if ($response['result'] == 110 && $response['enrolled'] == 'N' && empty($response['url'])) {
+      if ($response['cctype'] == 'VISA') {
+        $request['eci'] = 6;
+      }
+      elseif ($response['cctype'] == 'MC' || $response['cctype'] == 'SWITCH') {
+        $request['eci'] = 1;
+      }
+      commerce_realex_remote_do_auth_request($payment_method, $request, $order);
+      watchdog('commerce_realex', 'Customer is not 3d enrolled, liability is shifted so transaction will be completed (orderid: @order_id)', array('@order_id' => $response['orderid']));
+
     }
-    $_SESSION['realex_failures']++;
-    drupal_goto('checkout');
+    // Other response codes.
+    else {
+      drupal_set_message(t('We were unable to process your credit card payment as we were unable to ascertain whether the card is 3D Secure; reason provided by bank: %message. If the problem persists, contact us to complete your order.', array('%message' => $response['message'])), 'warning');
+      watchdog('commerce_realex', 'Payment failed: %message', array('%message' => $response['message']), WATCHDOG_WARNING);
+      if (empty($_SESSION['realex_failures'])) {
+        $_SESSION['realex_failures'] = 0;
+      }
+      $_SESSION['realex_failures']++;
+      drupal_goto('checkout');
+    }
   }
 }
 
+/**
+ * Callback function for 3D secure.
+ *
+ * @param order
+ *    The Commerce Order object.
+ */
+function commerce_realex_3dsecure_callback($order) {
+  // Validate response.
+  if (!isset($_POST['MD']) || !isset($_POST['PaRes'])) {
+    watchdog('commerce_realex', 'Invalid data received in 3D Secure response', array(), WATCHDOG_ERROR);
+    return drupal_not_found();
+  }
+
+  $md = $_POST['MD'];
+  // @TODO -  add in decryption
+  // $key = 'realex' . $order->data['extra_authorisation']['PAReq'] . 'commerce';
+  // $md = rtrim(mcrypt_decrypt(MCRYPT_RIJNDAEL_256, md5($key), base64_decode($md), MCRYPT_MODE_CBC, md5(md5($key))), "\0");
+
+  // The MD POST variable makes the foundation for our $request for 3ds-verifysig.
+  $md = explode('&', $md);
+  foreach ($md as $m) {
+    list($field, $content) = explode('=', $m);
+    $request[$field] = $content;
+  }
+
+  $payment_method = commerce_payment_method_load($request['payment_method_id']);
+
+  // Update request array.
+  $request['pares'] = $_POST['PaRes'];
+  $request['timestamp'] = strftime('%Y%m%d%H%M%S');
+  $request['merchantid'] = check_plain($payment_method['settings']['merchant_id']);
+  $request['account'] = check_plain($payment_method['settings']['account_id']);
+  $request['secret'] = check_plain($payment_method['settings']['shared_secret']);
+  $request['auto_settle'] = $payment_method['settings']['auto_settle'];
+  if (!empty($payment_method['settings']['varref'])) {
+    $request['varref'] = $payment_method['settings']['varref'];
+  }
+  // Allow other modules to alter the variable reference - used to tag orders.
+  drupal_alter('commerce_realex_varref', $request['varref'], $order);
+  $request['varref'] = check_plain($request['varref']);
+  mt_srand((double)microtime() * 1000000);
+
+
+  // Build the sha1hash.
+  _commerce_realex_build_request_sha1hash($request, '3ds-verifysig');
+
+  // Rebuild the xml to check the signature.
+  $xml = _commerce_realex_remote_build_xml_request($request, '3ds-verifysig');
+
+  // Send the request.
+  $url = $payment_method['settings']['3dsecure_remote_url'];
+  $response = _commerce_realex_send_request($url, $xml);
+
+  // Add the mpi fields to the request array.
+  if (isset($response['eci'])) {
+    $request['eci'] = $response['eci'];
+    $request['cavv'] = $response['cavv'];
+    $request['xid'] = $response['xid'];
+  }
+  _commerce_realex_process_3dsecure_verifysig_response($response, $request, $order);
+}
+
+/**
+ * Process 3d signature response.
+ *
+ * @param response
+ *    An array of the response information.
+ * @param request
+ *    An array with all the transaction information.
+ * @param order
+ *    Commerce order object.
+ */
+function _commerce_realex_process_3dsecure_verifysig_response($response, $request, $order) {
+  $auth_sent = FALSE;
+
+  if (!isset($response['result'])) {
+    watchdog('commerce_realex', 'No results code, something has gone wrong with the transaction.', array(), WATCHDOG_ERROR);
+    drupal_goto('checkout/' . $order->order_number . '/payment');
+  }
+
+  $payment_method = commerce_payment_method_load($request['payment_method_id']);
+
+  $success = _commerce_realex_remote_verify_response('3ds-verifysig', $request, &$response, $order, $payment_method);
+
+  // Successful response.
+  if ($success) {
+    switch ($response['status']) {
+      case 'Y':
+        // Cardholder successfully authenticated.
+        commerce_realex_remote_do_auth_request($payment_method, $request, $order);
+        $auth_sent = TRUE;
+        break;
+
+      case 'A':
+        // The cardholder is enrolled and the bank acknowledges the attempted
+        // authentication. Typically 3D secure process failed at the bank and so
+        // liability has been shifted to allow the transaction to continue.
+        commerce_realex_remote_do_auth_request($payment_method, $request, $order);
+        watchdog('commerce_realex', 'An attempt has been acknowledged for 3d authentication, liability is shifted so transaction will be completed', array('@order_id' => $response['orderid']));
+        break;
+
+      case 'N':
+        // The cardholder did not authenticate successfully – if you authorise
+        // this transaction you will be liable for any chargebacks.
+      case 'U':
+        // Cardholder authentication temporarily unavailable – no liability
+        // shift available.
+      default:
+        break;
+    }
+  }
+
+  if (!$auth_sent) {
+    // No authentication sent, inform customer and client what has gone wrong.
+    $message = $response['message'];
+    watchdog('commerce_realex', 'Payment failed: %message', array('%message' => $message), WATCHDOG_WARNING);
+    drupal_set_message(t('3D Secure verification failed. Payment could not be processed.', array('%message' => $message)), 'error');
+
+    // Get rid of the iframe and redirect to payment failed url.
+    $redirect = 'commerce-realex/payment/' . $order->order_id;
+    commerce_3d_secure_clear_iframe($redirect);
+  }
+}
 
 /**
  * Contact Realex to get a DCC offer.
@@ -429,7 +671,7 @@ function commerce_realex_remote_get_dcc_offer($payment_method, $pane_values, &$o
 function _commerce_realex_remote_verify_response($type, $request, &$response, $order, $payment_method) {
   if (!isset($response['result'])) {
     watchdog('commerce_realex', 'No results code, something has gone wrong with the transaction.', array(), WATCHDOG_ERROR);
-    drupal_goto('checkout/' . $order->order_number . '/payment');
+    drupal_goto('checkout/' . $order->order_id . '/payment');
   }
 
   $merchantid = $request['merchantid'];
@@ -479,6 +721,10 @@ function _commerce_realex_remote_build_xml_request($request, $type) {
   switch ($type) {
     case 'dccrate':
       return _commerce_realex_remote_build_xml_request_dccrate($request);
+    case '3ds-verifysig':
+      return _commerce_realex_remote_build_xml_request_3dsecure_verifysig($request);
+    case '3ds-verifyenrolled':
+      return _commerce_realex_remote_build_xml_request_3dsecure_verifyenrolled($request);
     case 'auth':
     default:
       return _commerce_realex_remote_build_xml_request_auth($request);
@@ -528,15 +774,31 @@ function _commerce_realex_remote_build_xml_request_auth($request) {
     $xml .= "
       </comments>";
   }
+  if (!empty($request['3dsecure']) && module_exists('commerce_3d_secure')) {
+    $xml .="<mpi>";
+    if (isset($request['cavv'])) {
+      $xml .= "<cavv>" . $request['cavv'] . "</cavv>";
+    }
+    if (isset($request['xid'])) {
+      $xml .= "<xid>" . $request['xid'] . "</xid>";
+    }
+    if (isset($request['eci'])) {
+      $xml .= "<eci>" . $request['eci'] . "</eci>";
+    }
+    $xml .="</mpi>";
+  }
   $xml .= "
     <autosettle flag='" . $request['auto_settle'] . "'/>
     <sha1hash>" . $request['sha1hash'] . "</sha1hash>
-    <tssinfo>
-      <address type=\"billing\">
+    <tssinfo>";
+  if (!empty($request['customer_id'])) {
+    $xml .= "<address type=\"billing\">
         <country>" . $request['country'] . "</country>
       </address>
       <custipaddress>" . $request['ip_address'] . "</custipaddress>
-      <custnum>" . $request['customer_id'] . "</custnum>
+      <custnum>" . $request['customer_id'] . "</custnum>\n";
+  }
+  $xml .= "
       <prodid>" . $request['products'] . "</prodid>";
   if (isset($request['varref'])) {
     $xml .= "
@@ -548,6 +810,72 @@ function _commerce_realex_remote_build_xml_request_auth($request) {
 
   return $xml;
 }
+
+/**
+ * Generate a "3Dsecure verifysig" request.
+ */
+function _commerce_realex_remote_build_xml_request_3dsecure_verifysig($request) {
+  $xml = "<request type='3ds-verifysig' timestamp='" . $request['timestamp'] . "'>
+    <merchantid>" . $request['merchantid'] . "</merchantid>
+    <account>" . $request['account'] . "</account>
+    <orderid>" . $request['orderid'] . "</orderid>
+    <amount currency='" . $request['currency'] . "'>" . $request['amount'] . "</amount>
+    <card>
+      <number>" . $request['ccnumber'] . "</number>
+      <expdate>" . $request['expiry_date'] . "</expdate>
+      <type>" . $request['cctype'] . "</type>
+      <chname>" . $request['chname'] . "</chname>
+    </card>
+    <pares>" . $request['pares'] . "</pares>";
+  if (!empty($request['comments']) && is_array($request['comments'])) {
+    $xml .= "
+      <comments>
+        <comment id='1'>" . $request['comments'][0] . "</comment>";
+    if (count($request['comments']) > 1) {
+      $xml .= "<comment id='2'>" . $request['comments'][1] . "</comment>";
+    }
+    $xml .= "
+      </comments>";
+  }
+  $xml .= "
+    <sha1hash>" . $request['sha1hash'] . "</sha1hash>
+  </request>";
+
+  return $xml;
+}
+
+/**
+ * Generate a "3Dsecure verifyenrolled" request.
+ */
+function _commerce_realex_remote_build_xml_request_3dsecure_verifyenrolled($request) {
+  $xml = "<request type='3ds-verifyenrolled' timestamp='" . $request['timestamp'] . "'>
+    <merchantid>" . $request['merchantid'] . "</merchantid>
+    <account>" . $request['account'] . "</account>
+    <orderid>" . $request['orderid'] . "</orderid>
+    <amount currency='" . $request['currency'] . "'>" . $request['amount'] . "</amount>
+    <card>
+      <number>" . $request['ccnumber'] . "</number>
+      <expdate>" . $request['expiry_date'] . "</expdate>
+      <type>" . $request['cctype'] . "</type>
+      <chname>" . $request['chname'] . "</chname>
+    </card>";
+  if (!empty($request['comments']) && is_array($request['comments'])) {
+    $xml .= "
+      <comments>
+        <comment id='1'>" . $request['comments'][0] . "</comment>";
+    if (count($request['comments']) > 1) {
+      $xml .= "<comment id='2'>" . $request['comments'][1] . "</comment>";
+    }
+    $xml .= "
+      </comments>";
+  }
+  $xml .= "
+    <sha1hash>" . $request['sha1hash'] . "</sha1hash>
+  </request>";
+
+  return $xml;
+}
+
 
 /**
  * Generate an "dccrate" xml request.

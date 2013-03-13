@@ -14,6 +14,40 @@
  */
 
 /**
+ * Implements hook_menu().
+ */
+function commerce_realex_menu() {
+  $items = array();
+
+  // Path to receive 3D Secure callback.
+  $items['commerce-realex/3d-secure-callback/%commerce_order'] = array(
+    'page callback' => 'commerce_realex_3dsecure_callback',
+    'page arguments' => array(2),
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+    'file' => 'commerce_realex_remote.inc',
+  );
+
+  // Path for positive completion of a transaction.
+  $items['commerce-realex/complete/%commerce_order'] = array(
+    'page callback' => 'commerce_realex_complete',
+    'page arguments' => array(2),
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
+
+  // Path for negative response to a transaction.
+  $items['commerce-realex/payment/%commerce_order'] = array(
+    'page callback' => 'commerce_realex_incomplete',
+    'page arguments' => array(2),
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
+
+  return $items;
+}
+
+/**
  * Implements hook_commerce_payment_method_info().
  */
 function commerce_realex_commerce_payment_method_info() {
@@ -96,8 +130,25 @@ function _commerce_realex_send_request($url, $data) {
 /**
  * Build SHA1 hash for request messages.
  */
-function _commerce_realex_build_request_sha1hash($request) {
-  $hash = $request['timestamp'] . '.' . $request['merchantid'] . '.' . $request['orderid'] . '.' . $request['amount'] . '.' . $request['currency'] . '.' . $request['ccnumber'];
+function _commerce_realex_build_request_sha1hash($request, $type = 'auth') {
+  switch ($type) {
+    case '3ds-verifyenrolled':
+      // timestamp.merchantid.orderid.result.message.pasref.authcode
+      // but example only goes as far as message...
+      $hash = $request['timestamp'] . '.' . $request['merchantid'] . '.' . $request['orderid'] . '.' . $request['result'] . '.' . $request['message'];
+      break;
+
+    case '3ds-verifysig':
+      // timestamp.merchantid.orderid.result.message.pasref.authcode
+      $hash = $request['timestamp'] . '.' . $request['merchantid'] . '.' . $request['orderid'] . '.' . $request['result'] . '.' . $request['message'] . '.' . $request['pasref'] . '.' . $request['authcode'];
+      break;
+
+    case 'auth':
+    default:
+      $hash = $request['timestamp'] . '.' . $request['merchantid'] . '.' . $request['orderid'] . '.' . $request['amount'] . '.' . $request['currency'] . '.' . $request['ccnumber'];
+      break;
+  }
+
   $sha1hash = sha1($hash);
   $hash = $sha1hash . '.' . $request['secret'];
   return sha1($hash);
@@ -148,6 +199,30 @@ function _commerce_realex_supported_card_types() {
     'laser' => t('Laser'),
   );
 }
+
+/*
+ * Order complete after the 3D secure process.
+ *
+ * @param order
+ *   The Commerce Order object.
+ */
+function commerce_realex_complete($order) {
+  commerce_checkout_complete($order);
+  drupal_goto('checkout/' . $order->order_id . '/complete');
+}
+
+/**
+ * Order incomplete after 3D secure process.
+ *
+ * @param order
+ *   The Commerce Order object.
+ *
+ * @TODO - handle cart contents on failure.
+ */
+function commerce_realex_incomplete($order) {
+  drupal_goto('checkout/' . $order->order_id . '/payment');
+}
+
 
 /**
  * Parse the response XML and create and object.
