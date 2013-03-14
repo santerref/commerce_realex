@@ -138,13 +138,15 @@ function _commerce_realex_build_request_sha1hash($request, $type = 'auth') {
       $hash = $request['timestamp'] . '.' . $request['merchantid'] . '.' . $request['orderid'] . '.' . $request['result'] . '.' . $request['message'];
       break;
 
-    case '3ds-verifysig':
+    case '3ds-verifysig-response':
       // timestamp.merchantid.orderid.result.message.pasref.authcode
       $hash = $request['timestamp'] . '.' . $request['merchantid'] . '.' . $request['orderid'] . '.' . $request['result'] . '.' . $request['message'] . '.' . $request['pasref'] . '.' . $request['authcode'];
       break;
 
+    case '3ds-verifysig':
     case 'auth':
     default:
+      // timestamp.merchantid.orderid.amount.currency.cardnumber
       $hash = $request['timestamp'] . '.' . $request['merchantid'] . '.' . $request['orderid'] . '.' . $request['amount'] . '.' . $request['currency'] . '.' . $request['ccnumber'];
       break;
   }

@@ -371,14 +371,14 @@ function commerce_realex_remote_do_3dsecure_verify_enrolled_request($payment_met
   // Successful payment.
   if ($success) {
     // Create a $md variable which is a string of useful information that will be mirrored in the 3d process.
-    $md = 'payment_method_id=' . $payment_method['method_id'] . '&orderid=' . $response['orderid'] . '&ccnumber=' . $request['ccnumber'] . '&chname=' . $request['chname'] . '&cctype=' . $request['cctype'] . '&currency=' . $request['currency'] . '&amount=' . $request['amount'] . '&expiry_date=' . $request['expiry_date'];
+    $md = 'payment_method_id=' . $payment_method['method_id'] . '&orderid=' . $response['orderid'] . '&ccnumber=' . $request['ccnumber'] . '&chname=' . $request['chname'] . '&cctype=' . $request['cctype'] . '&issueno=' . $request['issueno'] . '&currency=' . $request['currency'] . '&amount=' . $request['amount'] . '&expiry_date=' . $request['expiry_date'];
     // @TODO sort encryption
     // $key = 'realex' . $response['pareq'] . 'commerce';
     // $md = base64_encode(mcrypt_encrypt(MCRYPT_RIJNDAEL_256, md5($key), $md, MCRYPT_MODE_CBC, md5(md5($key))));
 
     // Save the data to process the 3D Secure response.
     $secure_data = array();
-    $secure_data['PaReq'] = $response['pareq'];
+    $secure_data['PAReq'] = $response['pareq'];
     $secure_data['ACSURL'] = $response['url']; // URL to use.
     $secure_data['MD'] = $md; // Merchant data.
     // The URL that the ACS should reply to.
@@ -439,7 +439,13 @@ function commerce_realex_3dsecure_callback($order) {
     $request[$field] = $content;
   }
 
-  $payment_method = commerce_payment_method_load($request['payment_method_id']);
+  $method_id = $request['payment_method_id'];
+  $payment_method = commerce_payment_method_load($method_id);
+  if (empty($order->payment_methods)) {
+    $order->payment_methods = array();
+    rules_invoke_all('commerce_payment_methods', $order);
+  }
+  $payment_method['settings'] = $order->payment_methods[$method_id . '|commerce_payment_' . $method_id]['settings'];
 
   // Update request array.
   $request['pares'] = $_POST['PaRes'];
@@ -456,9 +462,25 @@ function commerce_realex_3dsecure_callback($order) {
   $request['varref'] = check_plain($request['varref']);
   mt_srand((double)microtime() * 1000000);
 
+  // Get products purchased.
+  $products = array();
+  $comments = array();
+  $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+  foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
+    $line_item = $line_item_wrapper->value();
+    // If the line item is a product line item...
+    if (in_array($line_item->type, commerce_product_line_item_types())) {
+      $product = $line_item_wrapper->commerce_product->value();
+      $products[] = $product->product_id;
+      $comments[] = sprintf("%dx %s",$line_item->quantity, check_plain($product->title));
+    }
+  }
+
+  $request['products'] = implode(',', $products);
+  $request['comments'][0] = t('Products purchased:') . ' ' . implode(', ', $comments);
 
   // Build the sha1hash.
-  _commerce_realex_build_request_sha1hash($request, '3ds-verifysig');
+  $request['sha1hash'] = _commerce_realex_build_request_sha1hash($request, '3ds-verifysig');
 
   // Rebuild the xml to check the signature.
   $xml = _commerce_realex_remote_build_xml_request($request, '3ds-verifysig');
@@ -468,10 +490,11 @@ function commerce_realex_3dsecure_callback($order) {
   $response = _commerce_realex_send_request($url, $xml);
 
   // Add the mpi fields to the request array.
-  if (isset($response['eci'])) {
-    $request['eci'] = $response['eci'];
-    $request['cavv'] = $response['cavv'];
-    $request['xid'] = $response['xid'];
+  if (isset($response['threedsecure_eci'])) {
+    $request['3dsecure'] = TRUE;
+    $request['eci'] = $response['threedsecure_eci'];
+    $request['cavv'] = $response['threedsecure_cavv'];
+    $request['xid'] = $response['threedsecure_xid'];
   }
   _commerce_realex_process_3dsecure_verifysig_response($response, $request, $order);
 }
@@ -494,13 +517,19 @@ function _commerce_realex_process_3dsecure_verifysig_response($response, $reques
     drupal_goto('checkout/' . $order->order_number . '/payment');
   }
 
-  $payment_method = commerce_payment_method_load($request['payment_method_id']);
+  $method_id = $request['payment_method_id'];
+  $payment_method = commerce_payment_method_load($method_id);
+  if (empty($order->payment_methods)) {
+    $order->payment_methods = array();
+    rules_invoke_all('commerce_payment_methods', $order);
+  }
+  $payment_method['settings'] = $order->payment_methods[$method_id . '|commerce_payment_' . $method_id]['settings'];
 
   $success = _commerce_realex_remote_verify_response('3ds-verifysig', $request, &$response, $order, $payment_method);
 
   // Successful response.
   if ($success) {
-    switch ($response['status']) {
+    switch ($response['threedsecure_status']) {
       case 'Y':
         // Cardholder successfully authenticated.
         commerce_realex_remote_do_auth_request($payment_method, $request, $order);
@@ -683,7 +712,7 @@ function _commerce_realex_remote_verify_response($type, $request, &$response, $o
   if ($response['result'] != '00') {
     return FALSE;
   }
-  $pasref = $response['pasref'];
+  $pasref = isset($response['pasref']) ? $response['pasref'] : '';
   $authcode = isset($response['authcode']) ? $response['authcode'] : ''; // Needed for Fexco DCC.
 
   // This digital signature should correspond to the one Realex Payments returns
@@ -744,9 +773,12 @@ function _commerce_realex_remote_build_xml_request_auth($request) {
       <number>" . $request['ccnumber'] . "</number>
       <expdate>" . $request['expiry_date'] . "</expdate>
       <type>" . $request['cctype'] . "</type>
-      <chname>" . $request['chname'] . "</chname>
-      <issueno>" . $request['issueno'] . "</issueno>
-    </card>";
+      <chname>" . $request['chname'] . "</chname>\n";
+  if (isset($request['issueno'])) {
+    $xml .= "
+      <issueno>" . $request['issueno'] . "</issueno>\n";
+  }
+  $xml .= "</card>\n";
   if (isset($request['cvn'])) {
     $xml .="
       <cvn>
@@ -798,8 +830,10 @@ function _commerce_realex_remote_build_xml_request_auth($request) {
       <custipaddress>" . $request['ip_address'] . "</custipaddress>
       <custnum>" . $request['customer_id'] . "</custnum>\n";
   }
-  $xml .= "
+  if (!empty($request['products'])) {
+    $xml .= "
       <prodid>" . $request['products'] . "</prodid>";
+  }
   if (isset($request['varref'])) {
     $xml .= "
       <varref>" . $request['varref'] . "</varref>";
