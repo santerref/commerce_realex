@@ -186,6 +186,31 @@ function _commerce_realex_get_card_type($card) {
 }
 
 /**
+ * Determines whether 3D Secure is supported for the card type.
+ *
+ * @param $card
+ *   Card name.
+ * @return
+ *   True if card supports 3D secure, false otherwise.
+ */
+function _commerce_realex_is_3dsecure_supported_card($card) {
+  switch ($card) {
+    case 'mastercard':
+    case 'visa':
+    case 'switch':
+    case 'maestro':
+      return TRUE;
+    case 'solo':
+    case 'amex':
+    case 'laser':
+    case 'dc':
+    case 'delta':
+    default:
+      return FALSE;
+  }
+}
+
+/**
  * Retrieve list of card types supported by Realex.
  */
 function _commerce_realex_supported_card_types() {
