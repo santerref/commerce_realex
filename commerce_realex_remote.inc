@@ -220,7 +220,7 @@ function commerce_realex_remote_commerce_payment_method_submit_form_submit($paym
   mt_srand((double) microtime() * 1000000);
 
   $request['order_number'] = $order->order_number;
-  $request['orderid'] = $request['order_number'] . $request['timestamp'];
+  $request['orderid'] = $order->order_id . $request['timestamp'];
   $request['merchantid'] = check_plain($payment_method['settings']['merchant_id']);
   $request['account'] = check_plain($payment_method['settings']['account_id']);
   $request['secret'] = check_plain($payment_method['settings']['shared_secret']);
@@ -294,7 +294,8 @@ function commerce_realex_remote_commerce_payment_method_submit_form_submit($paym
   $request['sha1hash'] = _commerce_realex_build_request_sha1hash($request);
 
   // 3D Secure transaction.
-  if ($request['3dsecure'] && module_exists('commerce_3d_secure')) {
+  if ($request['3dsecure'] && _commerce_realex_is_3dsecure_supported_card($pane_values['credit_card']['type'])) {
+    // TODO: do we need to add in checking on response code 521 for solo/switch cards?
     commerce_realex_remote_do_3dsecure_verify_enrolled_request($payment_method, $request, $order);
   }
 
@@ -318,6 +319,7 @@ function commerce_realex_remote_do_auth_request($payment_method, $request, &$ord
   // Send the request.
   $type = 'auth';
   $url = $payment_method['settings']['remote_url'];
+  $payment_method['instance_id'] = $order->data['payment_method'];
   $xml = _commerce_realex_remote_build_xml_request($request, $type);
   $response = _commerce_realex_send_request($url, $xml);
 
@@ -330,7 +332,7 @@ function commerce_realex_remote_do_auth_request($payment_method, $request, &$ord
     $transaction = commerce_realex_remote_transaction_save($payment_method, $order, $response);
     //$order->data['commerce_realex_remote'] = $pane_values;
     $order->data['commerce_realex_remote']['transaction'] = $transaction;
-    $redirect_url = 'commerce-realex/complete/' . $order->order_number;
+    $redirect_url = 'commerce-realex/complete/' . $order->order_id;
     commerce_3d_secure_clear_iframe($redirect_url);
   }
 
@@ -348,7 +350,7 @@ function commerce_realex_remote_do_auth_request($payment_method, $request, &$ord
     }
     // 3D secure failure.
     elseif (isset($request['cavv'])) {
-      $redirect = 'commerce-realex/payment/' . $order->order_number;
+      $redirect = 'commerce-realex/payment/' . $order->order_id;
       commerce_3d_secure_clear_iframe($redirect);
     }
   }
@@ -514,7 +516,7 @@ function _commerce_realex_process_3dsecure_verifysig_response($response, $reques
 
   if (!isset($response['result'])) {
     watchdog('commerce_realex', 'No results code, something has gone wrong with the transaction.', array(), WATCHDOG_ERROR);
-    drupal_goto('checkout/' . $order->order_number . '/payment');
+    drupal_goto('checkout/' . $order->order_id . '/payment');
   }
 
   $method_id = $request['payment_method_id'];
@@ -592,7 +594,7 @@ function commerce_realex_remote_get_dcc_offer($payment_method, $pane_values, &$o
 */
 
   $request['order_number'] = $order->order_number;
-  $request['orderid'] = $request['order_number'] . $request['timestamp'];
+  $request['orderid'] = $order->order_id . $request['timestamp'];
   $request['merchantid'] = check_plain($payment_method['settings']['merchant_id']);
   $request['account'] = check_plain($payment_method['settings']['account_id']);
   $request['secret'] = check_plain($payment_method['settings']['shared_secret']);
@@ -951,8 +953,10 @@ function _commerce_realex_remote_build_xml_request_dccrate($request) {
  */
 function commerce_realex_remote_transaction_save($payment_method, $order, $response) {
   $transaction = commerce_payment_transaction_new('commerce_realex_remote', $order->order_id);
-  $transaction->amount = $order->commerce_order_total['und'][0]['amount'];
-  $transaction->currency_code = $order->commerce_order_total['und'][0]['currency_code'];
+  $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+  $commerce_order_total = $order_wrapper->commerce_order_total->value();
+  $transaction->amount = $commerce_order_total['amount'];
+  $transaction->currency_code = $commerce_order_total['currency_code'];
   $transaction->instance_id = $payment_method['instance_id'];
   $transaction->remote_id = $response['orderid'];
 
