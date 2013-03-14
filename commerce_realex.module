@@ -231,11 +231,12 @@ function commerce_realex_incomplete($order) {
  */
 class RealexParser {
 
-   // Initialise variables.
-   var $parser;
-   var $record;
-   var $timestamp;
-   var $field_type;
+  // Initialise variables.
+  var $parser;
+  var $parentElements = array();
+  var $currentElement = 0;
+  var $currentTSSCheck = "";
+  var $record = array();
 
   function RealexParser($response) {
     // Create and initialise XML parser
@@ -244,62 +245,56 @@ class RealexParser {
     xml_set_element_handler($this->parser, 'startElement', 'endElement');
     xml_set_character_data_handler($this->parser, 'cDataHandler');
 
-    // 1 = single field, 2 = array field, 3 = record container
-    $this->field_type = array('response' =>1,
-                              'orderid' => 1,
-                              'authcode' => 1,
-                              'result' => 2,
-                              'message' => 1,
-                              'pasref' => 1,
-                              'batchid' => 1,
-                              'md5hash' => 1,
-                              'sha1hash' => 1,
-                              'cvnresult' => 1,
-                              'dccinfo' => 2,
-                              'cardholdercurrency' => 1,
-                              'cardholderamount' => 1,
-                              'cardholderrate' => 1,
-                              'merchantcurrency' => 1,
-                              'merchantamount' => 1,
-                        );
-
     xml_parse($this->parser, $response);
     xml_parser_free($this->parser);
   }
 
-  /**
-   * The 'startElement()' function is called when an open element tag is found.
+  /* The "startElement()" function is called when an open element tag is found.
    * It creates a variable on the fly contructed of all the parent elements
    * joined together with an underscore. So the following xml:
    * <response><something>Owen</something></response>
-   * would create two variables:  $RESPONSE and $RESPONSE_SOMETHING
+   * would create two variables: $RESPONSE and $RESPONSE_SOMETHING
    */
-  function startElement($parser, $element, &$attrs) {
-    $element = strtolower($element);
-      $this->current_field = $element;
+  function startElement($parser, $name, $attrs) {
+    $name = strtolower($name);
+    array_push($this->parentElements, $name);
+    $this->currentElement = join("_", $this->parentElements);
 
-    if ($element == 'response' && $attrs['TIMESTAMP']) {
-      $this->record['timestamp'] = $attrs['TIMESTAMP'];
-    }
-  }
+    foreach ($attrs as $attr => $value) {
+      if ($this->currentElement == "response_tss_check" and $attr == "ID") {
+        $this->currentTSSCheck = $value;
+      }
 
-  function endElement($parser, $element) {
-    $element = strtolower($element);
-    // $this->current_field = '';
-  }
-
-  /**
-   * The 'cDataHandler()' function is called when the parser encounters any text that's
-   * not an element. Simply places the text found in the variable that
-   * was last created. So using the XML example above the text 'Owen'
-   * would be placed in the variable $RESPONSE_SOMETHING
-   */
-  function cDataHandler($parser, $text) {
-    if ($text != ' ') {
-      if (!empty($this->current_field)) {
-        $this->record[$this->current_field] = $text;
+      if ($this->currentElement == 'response' and $attr == "TIMESTAMP") {
+        $this->record['timestamp'] = $value;
       }
     }
+
+    // Clean up the element names to remove the response_ prefix.
+    $this->currentElement = str_replace('response_', '', $this->currentElement);
   }
+
+  /* The "cDataHandler()" function is called when the parser encounters any text that's
+     not an element. Simply places the text found in the variable that
+     was last created. So using the XML example above the text "Owen"
+     would be placed in the variable $RESPONSE_SOMETHING
+  */
+  function cDataHandler($parser, $cdata) {
+    if ( trim ( $cdata ) ) {
+      if ($this->currentTSSCheck != 0) {
+        $this->record['tsschecks']["$this->currentTSSCheck"] = $cdata;
+      }
+
+      $this->record[$this->currentElement] = $cdata;
+    }
+  }
+
+  //  The "endElement()" function is called when the closing tag of an element is found.
+  //  Just removes that element from the array of parent elements.
+  function endElement($parser, $name) {
+    $this->currentTSSCheck = 0;
+    array_pop($this->parentElements);
+  }
+
 }
 
