@@ -79,28 +79,44 @@ return;
   $request['expiry_date'] = $expiry_date;
 
   // Load the customer profile for the order.
-  $profile = commerce_customer_profile_load($order->commerce_customer_billing['und'][0]['profile_id']);
-  $address = $profile->commerce_customer_address['und'][0];  $request['customer_id'] = $order->commerce_customer_billing['und'][0]['profile_id'];
-  $address = $profile->commerce_customer_address['und'][0];  $request['customer_id'] = $order->commerce_customer_billing['und'][0]['profile_id'];
-  $request['customer_name'] = isset($address['name_line']) ? $address['name_line'] : '';
-  $request['street_one'] = isset($address['thoroughfare']) ? $address['thoroughfare'] : '';
-  $request['postcode'] = isset($address['postal_code']) ? $address['postal_code'] : '';
-  $request['city'] = isset($address['locality']) ? $address['locality'] : '';
-  $request['region'] = isset($address['administrative_area']) ? $address['administrative_area'] : '';
-  $request['country'] = isset($address['country']) ? $address['country'] : '';
+  if (!empty($order->commerce_customer_billing)) {
+    $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+    $profile = $order_wrapper->commerce_customer_billing->value();
+    $profile_wrapper = entity_metadata_wrapper('commerce_customer_profile', $profile);
+    $address = $profile_wrapper->commerce_customer_address->value();
+    $request['customer_id'] = $profile->profile_id;
+    if (isset($address['name_line'])) {
+      $request['customer_name'] = check_plain($address['name_line']);
+    }
+    elseif (isset($address['first_name'])) {
+      $request['customer_name'] = check_plain($address['first_name'] . ' ' .  $address['last_name']);
+    }
+    $request['street_one'] = isset($address['thoroughfare']) ? check_plain($address['thoroughfare']) : '';
+    $request['postcode'] = isset($address['postal_code']) ? check_plain($address['postal_code']) : '';
+    $request['city'] = isset($address['locality']) ? check_plain($address['locality']) : '';
+    $request['region'] = isset($address['administrative_area']) ? check_plain($address['administrative_area']) : '';
+    $request['country'] = isset($address['country']) ? check_plain($address['country']) : '';
+  }
   $request['amount'] = $charge['amount'];
   $request['currency'] = $charge['currency_code'];
   $request['ip_address'] = ip_address();
 
-  // TODO - fix, not line item ids, get product ids!!
   // Get products purchased.
   $products = array();
-  foreach ($order->commerce_line_items as $delta => $line_items) {
-    foreach ($line_items as $id => $line_item) {
-      $products[] = $line_item['line_item_id'];
+  $comments = array();
+  $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+  foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
+    $line_item = $line_item_wrapper->value();
+    // If the line item is a product line item...
+    if (in_array($line_item->type, commerce_product_line_item_types())) {
+      $product = $line_item_wrapper->commerce_product->value();
+      $products[] = $product->product_id;
+      $comments[] = sprintf("%dx %s",$line_item->quantity, check_plain($product->title));
     }
   }
   $request['products'] = implode(',', $products);
+  $request['comments'][0] = t('Products purchased:') . ' ' . implode(', ', $comments);
+  $request['log_message'] = '';
 
   $pane_id = $checkout_pane['commerce_realex_remote_dcc_pane'];
   // Pane wasn't displayed as DCC offer unsuccessful.
