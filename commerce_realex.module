@@ -25,7 +25,7 @@ function commerce_realex_menu() {
     'page arguments' => array(2),
     'access callback' => TRUE,
     'type' => MENU_CALLBACK,
-    'file' => 'commerce_realex_remote.inc',
+    'file' => 'commerce_realex_remote_3dsecure.inc',
   );
 
   // Path for positive completion of a transaction.
@@ -34,14 +34,7 @@ function commerce_realex_menu() {
     'page arguments' => array(2),
     'access callback' => TRUE,
     'type' => MENU_CALLBACK,
-  );
-
-  // Path for negative response to a transaction.
-  $items['commerce-realex/payment/%commerce_order'] = array(
-    'page callback' => 'commerce_realex_incomplete',
-    'page arguments' => array(2),
-    'access callback' => TRUE,
-    'type' => MENU_CALLBACK,
+    'file' => 'commerce_realex_remote_3dsecure.inc',
   );
 
   return $items;
@@ -186,31 +179,6 @@ function _commerce_realex_get_card_type($card) {
 }
 
 /**
- * Determines whether 3D Secure is supported for the card type.
- *
- * @param $card
- *   Card name.
- * @return
- *   True if card supports 3D secure, false otherwise.
- */
-function _commerce_realex_is_3dsecure_supported_card($card) {
-  switch ($card) {
-    case 'mastercard':
-    case 'visa':
-    case 'switch':
-    case 'maestro':
-      return TRUE;
-    case 'solo':
-    case 'amex':
-    case 'laser':
-    case 'dc':
-    case 'delta':
-    default:
-      return FALSE;
-  }
-}
-
-/**
  * Retrieve list of card types supported by Realex.
  */
 function _commerce_realex_supported_card_types() {
@@ -225,55 +193,6 @@ function _commerce_realex_supported_card_types() {
     'dc' => t("Diner's Club"),
     'laser' => t('Laser'),
   );
-}
-
-/**
- * Retrieve ECI value for 3D Secure transacions.
- */
-function _commerce_realex_get_3dsecure_eci_value($card_type, $scenario) {
-  $eci = NULL;
-  switch ($card_type) {
-    case 'VISA':
-      if ($scenario == 'not enrolled') {
-        $eci = 6;
-      }
-      elseif ($scenario == 'no liability shift') {
-        $eci = 7;
-      }
-    case 'MC':
-    case 'SWITCH':
-      if ($scenario == 'not enrolled') {
-        $eci = 1;
-      }
-      elseif ($scenario == 'no liability shift') {
-        $eci = 0;
-      }
-      break;
-  }
-  return $eci;
-}
-
-/*
- * Order complete after the 3D secure process.
- *
- * @param order
- *   The Commerce Order object.
- */
-function commerce_realex_complete($order) {
-  commerce_checkout_complete($order);
-  drupal_goto('checkout/' . $order->order_id . '/complete');
-}
-
-/**
- * Order incomplete after 3D secure process.
- *
- * @param order
- *   The Commerce Order object.
- *
- * @TODO - handle cart contents on failure?
- */
-function commerce_realex_incomplete($order) {
-  drupal_goto('checkout/' . $order->order_id . '/payment');
 }
 
 
