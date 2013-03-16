@@ -227,6 +227,32 @@ function _commerce_realex_supported_card_types() {
   );
 }
 
+/**
+ * Retrieve ECI value for 3D Secure transacions.
+ */
+function _commerce_realex_get_3dsecure_eci_value($card_type, $scenario) {
+  $eci = NULL;
+  switch ($card_type) {
+    case 'VISA':
+      if ($scenario == 'not enrolled') {
+        $eci = 6;
+      }
+      elseif ($scenario == 'no liability shift') {
+        $eci = 7;
+      }
+    case 'MC':
+    case 'SWITCH':
+      if ($scenario == 'not enrolled') {
+        $eci = 1;
+      }
+      elseif ($scenario == 'no liability shift') {
+        $eci = 0;
+      }
+      break;
+  }
+  return $eci;
+}
+
 /*
  * Order complete after the 3D secure process.
  *
@@ -244,7 +270,7 @@ function commerce_realex_complete($order) {
  * @param order
  *   The Commerce Order object.
  *
- * @TODO - handle cart contents on failure.
+ * @TODO - handle cart contents on failure?
  */
 function commerce_realex_incomplete($order) {
   drupal_goto('checkout/' . $order->order_id . '/payment');

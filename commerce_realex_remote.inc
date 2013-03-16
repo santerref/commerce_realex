@@ -64,6 +64,18 @@ function commerce_realex_remote_commerce_payment_method_settings_form($settings 
         ),
       ),
     );
+
+    $form['3dsecure_require_liability_shift'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Require liability shift'),
+      '#description' => t('If checked, transactions will only be attempted to be authorised if there is a liability shift away from the merchant.'),
+      '#default_value' => isset($settings['3dsecure_require_liability_shift']) ? $settings['3dsecure_require_liability_shift'] : 0,
+      '#states' => array(
+        'visible' => array(
+          ':input[name="parameter[payment_method][settings][payment_method][settings][3dsecure]"]' => array('checked' => TRUE),
+        ),
+      ),
+    );
   }
   else {
     $form['3dsecure'] = array(
@@ -295,7 +307,6 @@ function commerce_realex_remote_commerce_payment_method_submit_form_submit($paym
 
   // 3D Secure transaction.
   if ($request['3dsecure'] && _commerce_realex_is_3dsecure_supported_card($pane_values['credit_card']['type'])) {
-    // TODO: do we need to add in checking on response code 521 for solo/switch cards?
     commerce_realex_remote_do_3dsecure_verify_enrolled_request($payment_method, $request, $order);
   }
 
@@ -306,6 +317,10 @@ function commerce_realex_remote_commerce_payment_method_submit_form_submit($paym
 
   // Standard authorisation.
   else {
+    if ($request['3dsecure']) {
+      watchdog('commerce_realex', 'Card does not support 3D Secure, no liability shift (orderid: @order_id)', array('@order_id' => $response['orderid']));
+      $request['3dsecure'] = FALSE;
+    }
     commerce_realex_remote_do_auth_request($payment_method, $request, $order);
   }
 
@@ -364,11 +379,24 @@ function commerce_realex_remote_do_3dsecure_verify_enrolled_request($payment_met
   // Send the request.
   $type = '3ds-verifyenrolled';
   $url = $payment_method['settings']['3dsecure_remote_url'];
+  $require_liability_shift = $payment_method['settings']['3dsecure_require_liability_shift'];
   $xml = _commerce_realex_remote_build_xml_request($request, $type);
   $response = _commerce_realex_send_request($url, $xml);
 
   // Verify response.
   $success = _commerce_realex_remote_verify_response($type, $request, $response, $order, $payment_method);
+
+  // Cardholder is not enrolled, but ACS Url provided, so attempt sending PaReq anyway.
+  if (!$success && $response['result'] == 110 && $response['enrolled'] == 'N' && !empty($response['url']) && !empty($response['pareq'])) {
+    // Verify sha1hash first, which means temporarily setting result code to a
+    // successful "00".
+    $response['result'] = '00';
+    $success = _commerce_realex_remote_verify_response($type, $request, $response, $order, $payment_method);
+    // Reset result code to original.
+    $response['result'] = '110';
+    // If sha1hash verification succeeded, then $success is TRUE and
+    // 3ds-verifysig request will proceed.
+  }
 
   // Successful payment.
   if ($success) {
@@ -391,19 +419,21 @@ function commerce_realex_remote_do_3dsecure_verify_enrolled_request($payment_met
 
   // Payment failure.
   else {
-    // Cardholder is not enrolled.
+    // Cardholder is not enrolled, and no URL returned, proceed with auth.
     if ($response['result'] == 110 && $response['enrolled'] == 'N' && empty($response['url'])) {
-      if ($response['cctype'] == 'VISA') {
-        $request['eci'] = 6;
-      }
-      elseif ($response['cctype'] == 'MC' || $response['cctype'] == 'SWITCH') {
-        $request['eci'] = 1;
-      }
+      $request['eci'] = _commerce_realex_get_3dsecure_eci_value($request['cctype'], 'not enrolled');
       commerce_realex_remote_do_auth_request($payment_method, $request, $order);
       watchdog('commerce_realex', 'Customer is not 3d enrolled, liability is shifted so transaction will be completed (orderid: @order_id)', array('@order_id' => $response['orderid']));
-
     }
-    // Other response codes.
+
+    // Other response codes - proceed with auth if no liability shift required.
+    elseif (!$require_liability_shift) {
+      $request['eci'] = _commerce_realex_get_3dsecure_eci_value($request['cctype'], 'no liability shift');
+      commerce_realex_remote_do_auth_request($payment_method, $request, $order);
+      watchdog('commerce_realex', 'No liability shift for orderid: @order_id, but proceeding with authorisation.', array('@order_id' => $response['orderid']));
+    }
+
+    // Other response codes - liability shfit required, so stop and show error.
     else {
       drupal_set_message(t('We were unable to process your credit card payment as we were unable to ascertain whether the card is 3D Secure; reason provided by bank: %message. If the problem persists, contact us to complete your order.', array('%message' => $response['message'])), 'warning');
       watchdog('commerce_realex', 'Payment failed: %message', array('%message' => $response['message']), WATCHDOG_WARNING);
@@ -526,6 +556,7 @@ function _commerce_realex_process_3dsecure_verifysig_response($response, $reques
     rules_invoke_all('commerce_payment_methods', $order);
   }
   $payment_method['settings'] = $order->payment_methods[$method_id . '|commerce_payment_' . $method_id]['settings'];
+  $require_liability_shift = $payment_method['settings']['3dsecure_require_liability_shift'];
 
   $success = _commerce_realex_remote_verify_response('3ds-verifysig', $request, &$response, $order, $payment_method);
 
@@ -543,25 +574,51 @@ function _commerce_realex_process_3dsecure_verifysig_response($response, $reques
         // authentication. Typically 3D secure process failed at the bank and so
         // liability has been shifted to allow the transaction to continue.
         commerce_realex_remote_do_auth_request($payment_method, $request, $order);
-        watchdog('commerce_realex', 'An attempt has been acknowledged for 3d authentication, liability is shifted so transaction will be completed', array('@order_id' => $response['orderid']));
+        watchdog('commerce_realex', 'An attempt has been acknowledged for 3d authentication, liability is shifted so transaction will be completed (orderid: @order_id)', array('@order_id' => $response['orderid']));
+        $auth_sent = TRUE;
         break;
 
       case 'N':
         // The cardholder did not authenticate successfully – if you authorise
         // this transaction you will be liable for any chargebacks.
+        if (!$require_liability_shift) {
+          $request['eci'] = _commerce_realex_get_3dsecure_eci_value($request['cctype'], 'no liability shift');
+          commerce_realex_remote_do_auth_request($payment_method, $request, $order);
+          watchdog('commerce_realex', 'The cardholder did not authenticate successfully, no liability shift away from merchant (orderid: @order_id).', array('@order_id' => $response['orderid']));
+          $auth_sent = TRUE;
+        }
+        $response['user_message'] = t('Authentication failed. Please check your password and try again.');
+        break;
+
       case 'U':
         // Cardholder authentication temporarily unavailable – no liability
         // shift available.
+        if (!$require_liability_shift) {
+          $request['eci'] = _commerce_realex_get_3dsecure_eci_value($request['cctype'], 'no liability shift');
+          commerce_realex_remote_do_auth_request($payment_method, $request, $order);
+          watchdog('commerce_realex', 'Cardholder authentication temporarily unavailable, no liability shift available for orderid: @order_id.', array('@order_id' => $response['orderid']));
+          $auth_sent = TRUE;
+        }
+        $response['user_message'] = t('Authentication failed, service temporarily unavailable. Please try again later.');
+        break;
       default:
         break;
     }
   }
 
+  // Failure response.
+  elseif (!$require_liability_shift) {
+    $request['eci'] = _commerce_realex_get_3dsecure_eci_value($request['cctype'], 'no liability shift');
+    commerce_realex_remote_do_auth_request($payment_method, $request, $order);
+    watchdog('commerce_realex', 'Cardholder authentication tempoarily unavailable, no liability shift available for orderid: @order_id.', array('@order_id' => $response['orderid']));
+    $auth_sent = TRUE;
+  }
+
   if (!$auth_sent) {
     // No authentication sent, inform customer and client what has gone wrong.
-    $message = $response['message'];
+    $message = !empty($response['user_message']) ? $response['user_message'] : $response['message'];
     watchdog('commerce_realex', 'Payment failed: %message', array('%message' => $message), WATCHDOG_WARNING);
-    drupal_set_message(t('3D Secure verification failed. Payment could not be processed.', array('%message' => $message)), 'error');
+    drupal_set_message(t('3D Secure verification failed. Payment could not be processed: %message.', array('%message' => $message)), 'error');
 
     // Get rid of the iframe and redirect to payment failed url.
     $redirect = 'commerce-realex/payment/' . $order->order_id;
