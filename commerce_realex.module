@@ -25,7 +25,7 @@ function commerce_realex_menu() {
     'page arguments' => array(2),
     'access callback' => TRUE,
     'type' => MENU_CALLBACK,
-    'file' => 'commerce_realex_remote_3dsecure.inc',
+    'file' => 'includes/commerce_realex_remote_3dsecure.inc',
   );
 
   // Path for positive completion of a transaction.
@@ -34,7 +34,7 @@ function commerce_realex_menu() {
     'page arguments' => array(2),
     'access callback' => TRUE,
     'type' => MENU_CALLBACK,
-    'file' => 'commerce_realex_remote_3dsecure.inc',
+    'file' => 'includes/commerce_realex_remote_3dsecure.inc',
   );
 
   return $items;
@@ -58,7 +58,7 @@ function commerce_realex_commerce_payment_method_info() {
       'submit_form_validate' => 'commerce_realex_remote_commerce_payment_method_submit_form_validate',
       'submit_form_submit' => 'commerce_realex_remote_commerce_payment_method_submit_form_submit',
     ),
-    'file' => 'commerce_realex_remote.inc',
+    'file' => 'includes/commerce_realex_remote.inc',
   );
 
   return $payment_methods;

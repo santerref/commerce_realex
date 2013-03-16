@@ -307,7 +307,7 @@ function commerce_realex_remote_commerce_payment_method_submit_form_submit($paym
   $request['sha1hash'] = _commerce_realex_build_request_sha1hash($request);
 
   // 3D Secure transaction.
-  module_load_include('inc', 'commerce_realex', 'commerce_realex_remote_3dsecure');
+  module_load_include('inc', 'commerce_realex', 'includes/commerce_realex_remote_3dsecure');
   if ($request['3dsecure'] && _commerce_realex_is_3dsecure_supported_card($pane_values['credit_card']['type'])) {
     commerce_realex_remote_do_3dsecure_verify_enrolled_request($payment_method, $request, $order);
   }
@@ -554,7 +554,7 @@ function _commerce_realex_remote_verify_response($type, $request, &$response, $o
  *     An array with all the transaction data.
  */
 function _commerce_realex_remote_build_xml_request($request, $type) {
-  module_load_include('inc', 'commerce_realex', 'commerce_realex_remote_3dsecure');
+  module_load_include('inc', 'commerce_realex', 'includes/commerce_realex_remote_3dsecure');
   switch ($type) {
     case 'dccrate':
       return _commerce_realex_remote_build_xml_request_dccrate($request);

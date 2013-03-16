@@ -71,7 +71,7 @@ function commerce_realex_complete($order) {
  * Do a 3D Secure verify enrolled request.
  */
 function commerce_realex_remote_do_3dsecure_verify_enrolled_request($payment_method, $request, &$order) {
-  module_load_include('inc', 'commerce_realex', 'commerce_realex_remote');
+  module_load_include('inc', 'commerce_realex', 'includes/commerce_realex_remote');
 
   // Send the request.
   $type = '3ds-verifyenrolled';
@@ -150,7 +150,7 @@ function commerce_realex_remote_do_3dsecure_verify_enrolled_request($payment_met
  *    The Commerce Order object.
  */
 function commerce_realex_3dsecure_callback($order) {
-  module_load_include('inc', 'commerce_realex', 'commerce_realex_remote');
+  module_load_include('inc', 'commerce_realex', 'includes/commerce_realex_remote');
 
   // Validate response.
   if (!isset($_POST['MD']) || !isset($_POST['PaRes'])) {
