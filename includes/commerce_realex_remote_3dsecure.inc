@@ -256,7 +256,7 @@ function _commerce_realex_process_3dsecure_verifysig_response($response, $reques
   $payment_method['settings'] = $order->payment_methods[$method_id . '|commerce_payment_' . $method_id]['settings'];
   $require_liability_shift = $payment_method['settings']['3dsecure_require_liability_shift'];
 
-  $success = _commerce_realex_remote_verify_response('3ds-verifysig', $request, &$response, $order, $payment_method);
+  $success = _commerce_realex_remote_verify_response('3ds-verifysig', $request, $response, $order, $payment_method);
 
   // Successful response.
   if ($success) {
