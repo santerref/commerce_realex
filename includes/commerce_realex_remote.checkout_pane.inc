@@ -117,7 +117,7 @@ return;
     $request['shipping']['region'] = isset($address['administrative_area']) ? check_plain($address['administrative_area']) : '';
     $request['shipping']['country'] = isset($address['country']) ? check_plain($address['country']) : '';
   }
-  $request['customer_id'] = isset($request['billing']['customer_id']) ? $request['billing']['customer_id'] : $request['shipping']['customer_id'];
+  $request['customer_id'] = isset($request['billing']['customer_id']) ? $request['billing']['customer_id'] : isset($request['shipping']['customer_id']) ? $request['shipping']['customer_id'] : 0;
 
   $request['amount'] = $charge['amount'];
   $request['currency'] = $charge['currency_code'];
