@@ -78,25 +78,47 @@ return;
   $request['start_date'] = $start_date;
   $request['expiry_date'] = $expiry_date;
 
-  // Load the customer profile for the order.
+  // Load the customer billing profile for the order.
   if (!empty($order->commerce_customer_billing)) {
     $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
     $profile = $order_wrapper->commerce_customer_billing->value();
     $profile_wrapper = entity_metadata_wrapper('commerce_customer_profile', $profile);
     $address = $profile_wrapper->commerce_customer_address->value();
-    $request['customer_id'] = $profile->profile_id;
+    $request['billing']['customer_id'] = $profile->profile_id;
     if (isset($address['name_line'])) {
-      $request['customer_name'] = check_plain($address['name_line']);
+      $request['billing']['customer_name'] = check_plain($address['name_line']);
     }
     elseif (isset($address['first_name'])) {
-      $request['customer_name'] = check_plain($address['first_name'] . ' ' .  $address['last_name']);
+      $request['billing']['customer_name'] = check_plain($address['first_name'] . ' ' .  $address['last_name']);
     }
-    $request['street_one'] = isset($address['thoroughfare']) ? check_plain($address['thoroughfare']) : '';
-    $request['postcode'] = isset($address['postal_code']) ? check_plain($address['postal_code']) : '';
-    $request['city'] = isset($address['locality']) ? check_plain($address['locality']) : '';
-    $request['region'] = isset($address['administrative_area']) ? check_plain($address['administrative_area']) : '';
-    $request['country'] = isset($address['country']) ? check_plain($address['country']) : '';
+    $request['billing']['street_one'] = isset($address['thoroughfare']) ? check_plain($address['thoroughfare']) : '';
+    $request['billing']['postcode'] = isset($address['postal_code']) ? check_plain($address['postal_code']) : '';
+    $request['billing']['city'] = isset($address['locality']) ? check_plain($address['locality']) : '';
+    $request['billing']['region'] = isset($address['administrative_area']) ? check_plain($address['administrative_area']) : '';
+    $request['billing']['country'] = isset($address['country']) ? check_plain($address['country']) : '';
   }
+
+  // Load the customer shipping profile for the order.
+  if (!empty($order->commerce_customer_shipping)) {
+    $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+    $profile = $order_wrapper->commerce_customer_shipping->value();
+    $profile_wrapper = entity_metadata_wrapper('commerce_customer_profile', $profile);
+    $address = $profile_wrapper->commerce_customer_address->value();
+    $request['shipping']['customer_id'] = $profile->profile_id;
+    if (isset($address['name_line'])) {
+      $request['shipping']['customer_name'] = check_plain($address['name_line']);
+    }
+    elseif (isset($address['first_name'])) {
+      $request['shipping']['customer_name'] = check_plain($address['first_name'] . ' ' .  $address['last_name']);
+    }
+    $request['shipping']['street_one'] = isset($address['thoroughfare']) ? check_plain($address['thoroughfare']) : '';
+    $request['shipping']['postcode'] = isset($address['postal_code']) ? check_plain($address['postal_code']) : '';
+    $request['shipping']['city'] = isset($address['locality']) ? check_plain($address['locality']) : '';
+    $request['shipping']['region'] = isset($address['administrative_area']) ? check_plain($address['administrative_area']) : '';
+    $request['shipping']['country'] = isset($address['country']) ? check_plain($address['country']) : '';
+  }
+  $request['customer_id'] = isset($request['billing']['customer_id']) ? $request['billing']['customer_id'] : $request['shipping']['customer_id'];
+
   $request['amount'] = $charge['amount'];
   $request['currency'] = $charge['currency_code'];
   $request['ip_address'] = ip_address();
