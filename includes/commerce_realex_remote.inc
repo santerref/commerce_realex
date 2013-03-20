@@ -67,8 +67,8 @@ function commerce_realex_remote_commerce_payment_method_settings_form($settings 
 
     $form['3dsecure_require_liability_shift'] = array(
       '#type' => 'checkbox',
-      '#title' => t('Require liability shift'),
-      '#description' => t('If checked, transactions will only be attempted to be authorised if there is a liability shift away from the merchant.'),
+      '#title' => t('Require liability shift where possible'),
+      '#description' => t('If checked, transactions will only be attempted to be authorised if there is a liability shift away from the merchant. Note, not all card types, e.g. Laser, Amex, corporate VISA cards, support 3D Secure and for these the transaction will continue even though there is no liability shift available.'),
       '#default_value' => isset($settings['3dsecure_require_liability_shift']) ? $settings['3dsecure_require_liability_shift'] : 0,
       '#states' => array(
         'visible' => array(
