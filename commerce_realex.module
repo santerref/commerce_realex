@@ -28,15 +28,6 @@ function commerce_realex_menu() {
     'file' => 'includes/commerce_realex_remote_3dsecure.inc',
   );
 
-  // Path for positive completion of a transaction.
-  $items['commerce-realex/complete/%commerce_order'] = array(
-    'page callback' => 'commerce_realex_complete',
-    'page arguments' => array(2),
-    'access callback' => TRUE,
-    'type' => MENU_CALLBACK,
-    'file' => 'includes/commerce_realex_remote_3dsecure.inc',
-  );
-
   return $items;
 }
 

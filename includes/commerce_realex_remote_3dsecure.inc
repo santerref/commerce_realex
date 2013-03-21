@@ -56,15 +56,20 @@ function _commerce_realex_get_3dsecure_eci_value($card_type, $scenario) {
   return $eci;
 }
 
-/*
- * Order complete after the 3D secure process.
+/**
+ * Update order to checkout page prior to 3D Secure page.
+ * Used in 3D Secure failure situations.
  *
  * @param order
  *   The Commerce Order object.
  */
-function commerce_realex_complete($order) {
-  commerce_checkout_complete($order);
-  drupal_goto('checkout/' . $order->order_id . '/complete');
+function commerce_realex_remote_3dsecure_previous_page(&$order) {
+  $order_status = commerce_order_status_load($order->status);
+  if ($order_status['state'] == 'checkout' && $order_status['checkout_page'] == '3d_secure') {
+    $payment_page = commerce_checkout_page_load($order_status['checkout_page']);
+    $prev_page = $payment_page['prev_page'];
+    $order = commerce_order_status_update($order, 'checkout_' . $prev_page, FALSE, NULL, '');
+  }
 }
 
 /**
@@ -320,7 +325,8 @@ function _commerce_realex_process_3dsecure_verifysig_response($response, $reques
     drupal_set_message(t('3D Secure verification failed. Payment could not be processed: %message.', array('%message' => $message)), 'error');
 
     // Get rid of the iframe and redirect to payment failed url.
-    $redirect = 'checkout/' . $order->order_id . '/payment';
+    commerce_realex_remote_3dsecure_previous_page($order);
+    $redirect = commerce_checkout_order_uri($order);
     commerce_3d_secure_clear_iframe($redirect);
   }
 }

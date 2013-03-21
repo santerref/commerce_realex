@@ -371,26 +371,30 @@ function commerce_realex_remote_do_auth_request($payment_method, $request, &$ord
     $transaction = commerce_realex_remote_transaction_save($payment_method, $order, $response, $log);
     //$order->data['commerce_realex_remote'] = $pane_values;
     $order->data['commerce_realex_remote']['transaction'] = $transaction;
-    $redirect_url = 'commerce-realex/complete/' . $order->order_id;
-    commerce_3d_secure_clear_iframe($redirect_url);
+    commerce_checkout_complete($order);
+    $redirect = commerce_checkout_order_uri($order);
+    commerce_3d_secure_clear_iframe($redirect);
   }
 
   // Unsuccessful payments.
   else {
     // Payment failure.
-    if (!isset($order->data['extra_authorisation'])) {
-      drupal_set_message(t('We were unable to process your credit card payment; reason provided by bank: %message. If the problem persists, contact us to complete your order.', array('%message' => $response['message'])), 'warning');
-      watchdog('commerce_realex', 'Payment failed: %message', array('%message' => $response['message']), WATCHDOG_WARNING);
-      drupal_goto('checkout');
-      if (empty($_SESSION['realex_failures'])) {
-        $_SESSION['realex_failures'] = 0;
-      }
-      $_SESSION['realex_failures']++;
+    drupal_set_message(t('We were unable to process your credit card payment; reason provided by bank: %message. If the problem persists, contact us to complete your order.', array('%message' => $response['message'])), 'warning');
+    watchdog('commerce_realex', 'Payment failed: %message', array('%message' => $response['message']), WATCHDOG_WARNING);
+
+    if (empty($_SESSION['realex_failures'])) {
+      $_SESSION['realex_failures'] = 0;
     }
+    $_SESSION['realex_failures']++;
+
     // 3D secure failure.
-    elseif (isset($request['cavv'])) {
-      $redirect = 'checkout/' . $order->order_id . '/payment';
+    if (isset($request['cavv'])) {
+      commerce_realex_remote_3dsecure_previous_page($order);
+      $redirect = commerce_checkout_order_uri($order);
       commerce_3d_secure_clear_iframe($redirect);
+    }
+    else {
+      drupal_goto('checkout');
     }
   }
 }
