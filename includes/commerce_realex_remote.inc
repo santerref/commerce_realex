@@ -377,7 +377,6 @@ function commerce_realex_remote_do_auth_request($payment_method, $request, &$ord
     $transaction = commerce_realex_remote_transaction_save($payment_method, $order, $response, $log);
     //$order->data['commerce_realex_remote'] = $pane_values;
     $order->data['commerce_realex_remote']['transaction'] = $transaction;
-    commerce_checkout_complete($order);
     $redirect = commerce_checkout_order_uri($order);
     commerce_3d_secure_clear_iframe($redirect);
   }
