@@ -606,13 +606,13 @@ function _commerce_realex_remote_build_xml_request_auth($request) {
       <number>" . $request['ccnumber'] . "</number>
       <expdate>" . $request['expiry_date'] . "</expdate>
       <type>" . $request['cctype'] . "</type>
-      <chname>" . $request['chname'] . "</chname>\n";
+      <chname>" . $request['chname'] . "</chname>";
   if (isset($request['issueno'])) {
     $xml .= "
-      <issueno>" . $request['issueno'] . "</issueno>\n";
+      <issueno>" . $request['issueno'] . "</issueno>";
   }
   $xml .= "
-    </card>\n";
+    </card>";
   if (isset($request['cvn'])) {
     $xml .="
     <cvn>
@@ -670,18 +670,18 @@ function _commerce_realex_remote_build_xml_request_auth($request) {
       <address type=\"billing\">
         <country>" . $request['billing']['country'] . "</country>
         <code>" . $request['billing']['postcode'] . "</code>
-      </address>\n";
+      </address>";
   }
   if (!empty($request['shipping'])) {
     $xml .= "
       <address type=\"shipping\">
         <country>" . $request['shipping']['country'] . "</country>
         <code>" . $request['shipping']['postcode'] . "</code>
-      </address>\n";
+      </address>";
   }
   if (!empty($request['customer_id'])) {
       $xml .= "
-      <custnum>" . $request['customer_id'] . "</custnum>\n";
+      <custnum>" . $request['customer_id'] . "</custnum>";
   }
   if (!empty($request['products'])) {
     $xml .= "
