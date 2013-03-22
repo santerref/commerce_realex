@@ -280,6 +280,7 @@ function commerce_realex_remote_commerce_payment_method_submit_form_submit($paym
     $zip_numbers = preg_replace('/[^0-9]/', '', $request['billing']['postcode']);
     $street_numbers = preg_replace('/[^0-9]/', '', $request['billing']['street_one']);
     $request['billing']['zip|postal_code'] = $zip_numbers . '|' . $street_numbers;
+    $request['billing']['zip|postal_code'] = ($request['billing']['zip|postal_code'] == '|') ? '' : $request['billing']['zip|postal_code'];
     $request['billing']['city'] = isset($address['locality']) ? check_plain($address['locality']) : '';
     $request['billing']['region'] = isset($address['administrative_area']) ? check_plain($address['administrative_area']) : '';
     $request['billing']['country'] = isset($address['country']) ? check_plain($address['country']) : '';
@@ -303,6 +304,7 @@ function commerce_realex_remote_commerce_payment_method_submit_form_submit($paym
     $zip_numbers = preg_replace('/[^0-9]/', '', $request['shipping']['postcode']);
     $street_numbers = preg_replace('/[^0-9]/', '', $request['shipping']['street_one']);
     $request['shipping']['zip|postal_code'] = $zip_numbers . '|' . $street_numbers;
+    $request['shipping']['zip|postal_code'] = ($request['shipping']['zip|postal_code'] == '|') ? '' : $request['shipping']['zip|postal_code'];
     $request['shipping']['city'] = isset($address['locality']) ? check_plain($address['locality']) : '';
     $request['shipping']['region'] = isset($address['administrative_area']) ? check_plain($address['administrative_area']) : '';
     $request['shipping']['country'] = isset($address['country']) ? check_plain($address['country']) : '';
