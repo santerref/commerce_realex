@@ -611,72 +611,83 @@ function _commerce_realex_remote_build_xml_request_auth($request) {
     $xml .= "
       <issueno>" . $request['issueno'] . "</issueno>\n";
   }
-  $xml .= "</card>\n";
+  $xml .= "
+    </card>\n";
   if (isset($request['cvn'])) {
     $xml .="
-      <cvn>
-        <number>" . $request['cvn'] . "</number>
-        <presind>1</presind>
-      </cvn>";
+    <cvn>
+      <number>" . $request['cvn'] . "</number>
+      <presind>1</presind>
+    </cvn>";
   }
   if (isset($request['dcc'])) {
     $xml .="
-      <dccinfo>
-        <ccp>" . $request['dcc_provider'] . "</ccp>
-        <type>1</type>
-        <rate>" . $request['cardholderrate'] . "</rate>
-        <ratetype>S</ratetype>
-        <amount currency='" . $request['cardholdercurrency'] . "'>" . $request['cardholderamount'] . "</amount>
-      </dccinfo>";
+    <dccinfo>
+      <ccp>" . $request['dcc_provider'] . "</ccp>
+      <type>1</type>
+      <rate>" . $request['cardholderrate'] . "</rate>
+      <ratetype>S</ratetype>
+      <amount currency='" . $request['cardholdercurrency'] . "'>" . $request['cardholderamount'] . "</amount>
+    </dccinfo>";
   }
   if (!empty($request['comments']) && is_array($request['comments'])) {
     $xml .= "
-      <comments>
-        <comment id='1'>" . $request['comments'][0] . "</comment>";
+    <comments>
+      <comment id='1'>" . $request['comments'][0] . "</comment>";
     if (count($request['comments']) > 1) {
-      $xml .= "<comment id='2'>" . $request['comments'][1] . "</comment>";
+      $xml .= "
+      <comment id='2'>" . $request['comments'][1] . "</comment>";
     }
     $xml .= "
-      </comments>";
+    </comments>";
   }
   if (!empty($request['3dsecure']) && module_exists('commerce_3d_secure')) {
-    $xml .="<mpi>";
+    $xml .="
+    <mpi>";
     if (isset($request['cavv'])) {
-      $xml .= "<cavv>" . $request['cavv'] . "</cavv>";
+      $xml .= "
+      <cavv>" . $request['cavv'] . "</cavv>";
     }
     if (isset($request['xid'])) {
-      $xml .= "<xid>" . $request['xid'] . "</xid>";
+      $xml .= "
+      <xid>" . $request['xid'] . "</xid>";
     }
     if (isset($request['eci'])) {
-      $xml .= "<eci>" . $request['eci'] . "</eci>";
+      $xml .= "
+      <eci>" . $request['eci'] . "</eci>";
     }
-    $xml .="</mpi>";
+    $xml .="
+    </mpi>";
   }
   $xml .= "
     <autosettle flag='" . $request['auto_settle'] . "'/>
     <sha1hash>" . $request['sha1hash'] . "</sha1hash>
     <tssinfo>";
+  $xml .=  "
+      <custipaddress>" . $request['ip_address'] . "</custipaddress>";
   if (!empty($request['billing'])) {
-    $xml .= "<address type=\"billing\">
+    $xml .= "
+      <address type=\"billing\">
         <country>" . $request['billing']['country'] . "</country>
         <code>" . $request['billing']['postcode'] . "</code>
-      </address\n";
+      </address>\n";
   }
   if (!empty($request['shipping'])) {
-    $xml .= "<address type=\"shipping\">
+    $xml .= "
+      <address type=\"shipping\">
         <country>" . $request['shipping']['country'] . "</country>
         <code>" . $request['shipping']['postcode'] . "</code>
-      </address\n";
+      </address>\n";
   }
   if (!empty($request['customer_id'])) {
-    $xml .=  "<custipaddress>" . $request['ip_address'] . "</custipaddress>
+      $xml .= "
       <custnum>" . $request['customer_id'] . "</custnum>\n";
   }
   if (!empty($request['products'])) {
     $xml .= "
       <prodid>" . $request['products'] . "</prodid>";
   }
-  if (isset($request['varref'])) {
+  if (!empty($request['varref'])) {
     $xml .= "
       <varref>" . $request['varref'] . "</varref>";
   }
