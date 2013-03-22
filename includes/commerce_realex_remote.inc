@@ -602,6 +602,7 @@ function _commerce_realex_remote_build_xml_request($request, $type) {
  * Generate an "auth" xml request.
  */
 function _commerce_realex_remote_build_xml_request_auth($request) {
+  $request['ip_address'] = isset($request['ip_address']) ? $request['ip_address'] : ip_address();
   $xml = "<request type='auth' timestamp='" . $request['timestamp'] . "'>
     <merchantid>" . $request['merchantid'] . "</merchantid>
     <account>" . $request['account'] . "</account>
