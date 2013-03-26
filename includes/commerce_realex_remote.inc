@@ -382,7 +382,7 @@ function commerce_realex_remote_do_auth_request($payment_method, $request, &$ord
     //commerce_checkout_complete($order);
     $order = commerce_order_status_update($order, 'checkout_payment');
     $redirect = commerce_checkout_order_uri($order);
-    if ($request['3dsecure']) {
+    if (function_exists('commerce_3d_secure_clear_iframe')) {
       commerce_3d_secure_clear_iframe($redirect);
     }
     else {
