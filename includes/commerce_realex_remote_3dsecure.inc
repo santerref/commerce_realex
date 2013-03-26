@@ -129,6 +129,7 @@ function commerce_realex_remote_do_3dsecure_verify_enrolled_request($payment_met
 
     // Other response codes - proceed with auth if no liability shift required.
     elseif (!$require_liability_shift) {
+      $response['enrolled'] = isset($response['enrolled']) ? $response['enrolled'] : '';
       $request['eci'] = _commerce_realex_get_3dsecure_eci_value($request['cctype'], 'no liability shift');
       $request['log_message'] .= t('3ds-verifyenrolled: No liability shift (Result: @result, Enrolled: @enrolled)', array('@result' => $response['result'], '@enrolled' => $response['enrolled']));
       commerce_realex_remote_do_auth_request($payment_method, $request, $order);
