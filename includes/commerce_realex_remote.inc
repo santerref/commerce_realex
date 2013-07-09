@@ -309,7 +309,7 @@ function commerce_realex_remote_commerce_payment_method_submit_form_submit($paym
     $request['shipping']['region'] = isset($address['administrative_area']) ? check_plain($address['administrative_area']) : '';
     $request['shipping']['country'] = isset($address['country']) ? check_plain($address['country']) : '';
   }
-  $request['customer_id'] = isset($request['billing']['customer_id']) ? $request['billing']['customer_id'] : isset($request['shipping']['customer_id']) ? $request['shipping']['customer_id'] : 0;
+  $request['customer_id'] = isset($request['billing']['customer_id']) ? $request['billing']['customer_id'] : !empty($request['shipping']['customer_id']) ? $request['shipping']['customer_id'] : 0;
   $request['amount'] = $charge['amount'];
   $request['currency'] = $charge['currency_code'];
   $request['ip_address'] = ip_address();
@@ -772,7 +772,7 @@ function commerce_realex_remote_transaction_save($payment_method, $order, $respo
   }
 
   // Log the response variables.
-  $transaction->message = 'Status @resultcode, @message. Order ID: @orderid, Auth code: @authcode, Timestamp: @timestamp, Pasref: @pasref, Address check: @address, Postcode check: @postcode, CVN result: @cvn. @log';
+  $transaction->message = 'Status @resultcode, @message. Order ID: @orderid, Auth code: @authcode, Timestamp: @timestamp, Pasref: @pasref, Address check: @address, Postcode check: @postcode, CVN result: @cvn, Batch Id: @batchid. @log';
   $transaction->message_variables = array(
     '@resultcode' => $response['result'],
     '@message' => $response['message'],
@@ -783,6 +783,7 @@ function commerce_realex_remote_transaction_save($payment_method, $order, $respo
     '@address' => $response['avsaddressresponse'],
     '@postcode' => $response['avspostcoderesponse'],
     '@cvn' => $response['cvnresult'],
+    '@batchid' => $response['batchid'],
     '@log' => $log,
   );
 
