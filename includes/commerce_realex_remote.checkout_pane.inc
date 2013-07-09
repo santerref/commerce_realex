@@ -71,7 +71,7 @@ return;
   $request['dcc_provider'] = $payment_method['settings']['dcc_provider'];
 
   $request['chname'] = $pane_values['credit_card']['owner'];
-  $request['cctype'] = _commerce_realex_get_card_type($pane_values['credit_card']['type']);
+  $request['cctype'] = _commerce_realex_get_card_type($pane_values['credit_card']['type'], $pane_values['credit_card']['number']);
   $request['ccnumber'] = $pane_values['credit_card']['number'];
   $request['cvn'] = $pane_values['credit_card']['code'];
   $request['issueno'] = isset($pane_values['credit_card']['issue']) ? $pane_values['credit_card']['issue'] : '';

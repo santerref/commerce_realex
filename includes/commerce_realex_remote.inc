@@ -249,8 +249,8 @@ function commerce_realex_remote_commerce_payment_method_submit_form_submit($paym
   //$request['dcc_provider'] = $payment_method['settings']['dcc_provider'];
 
   $request['chname'] = check_plain($pane_values['credit_card']['owner']);
-  $request['cctype'] = _commerce_realex_get_card_type($pane_values['credit_card']['type']);
   $request['ccnumber'] = check_plain($pane_values['credit_card']['number']);
+  $request['cctype'] = _commerce_realex_get_card_type($pane_values['credit_card']['type'], $pane_values['credit_card']['number']);
   $request['cvn'] = isset($pane_values['credit_card']['code']) ? check_plain($pane_values['credit_card']['code']) : NULL;
   $request['issueno'] = isset($pane_values['credit_card']['issue']) ? check_plain($pane_values['credit_card']['issue']) : '';
   $request['start_date'] = check_plain($start_date);
@@ -453,8 +453,8 @@ function commerce_realex_remote_get_dcc_offer($payment_method, $pane_values, &$o
   $request['dcc_provider'] = check_plain($payment_method['settings']['dcc_provider']);
 
   $request['chname'] = check_plain($pane_values['credit_card']['owner']);
-  $request['cctype'] = _commerce_realex_get_card_type($pane_values['credit_card']['type']);
   $request['ccnumber'] = check_plain($pane_values['credit_card']['number']);
+  $request['cctype'] = _commerce_realex_get_card_type($pane_values['credit_card']['type'], $request['ccnumber']);
   $request['cvn'] = isset($pane_values['credit_card']['code']) ? check_plain($pane_values['credit_card']['code']) : NULL;
   $request['issueno'] = isset($pane_values['credit_card']['issue']) ? check_plain($pane_values['credit_card']['issue']) : '';
   $request['start_date'] = check_plain($start_date);

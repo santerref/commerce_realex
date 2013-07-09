@@ -145,10 +145,13 @@ function _commerce_realex_build_request_sha1hash($request, $type = 'auth') {
  *
  * @param $card
  *   Card name.
+ * @param $number
+ *   Card number - needed for checking bin ranges.
  * @return
  *   Realex card type code.
  */
-function _commerce_realex_get_card_type($card) {
+function _commerce_realex_get_card_type($card, $number) {
+  $bin_range = substr($number, 0, 4);
   switch ($card) {
     case 'mastercard':
       return 'MC';
@@ -156,7 +159,11 @@ function _commerce_realex_get_card_type($card) {
       return 'AMEX';
     case 'solo':
     case 'switch':
+      return 'SWITCH';
     case 'maestro':
+      if ($bin_range == '6703') {
+        return 'MC';
+      }
       return 'SWITCH';
     case 'laser':
       return 'LASER';
