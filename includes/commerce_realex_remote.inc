@@ -232,7 +232,7 @@ function commerce_realex_remote_commerce_payment_method_submit_form_submit($paym
   mt_srand((double) microtime() * 1000000);
 
   $request['order_number'] = $order->order_number;
-  $request['orderid'] = $order->order_id . $request['timestamp'];
+  $request['orderid'] = $order->order_id . '-' . $request['timestamp'];
   $request['merchantid'] = check_plain($payment_method['settings']['merchant_id']);
   $request['account'] = check_plain($payment_method['settings']['account_id']);
   $request['secret'] = check_plain($payment_method['settings']['shared_secret']);
@@ -438,7 +438,7 @@ function commerce_realex_remote_get_dcc_offer($payment_method, $pane_values, &$o
 */
 
   $request['order_number'] = $order->order_number;
-  $request['orderid'] = $order->order_id . $request['timestamp'];
+  $request['orderid'] = $order->order_id . '-' . $request['timestamp'];
   $request['merchantid'] = check_plain($payment_method['settings']['merchant_id']);
   $request['account'] = check_plain($payment_method['settings']['account_id']);
   $request['secret'] = check_plain($payment_method['settings']['shared_secret']);
