@@ -28,6 +28,24 @@ function commerce_realex_menu() {
     'file' => 'includes/commerce_realex_remote_3dsecure.inc',
   );
 
+  // Path to receive Realex Redirect IPNs.
+  $items['commerce-realex/redirect/ipn'] = array(
+    'page callback' => 'commerce_realex_redirect_process_ipn',
+    'page arguments' => array(),
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+    'file' => 'includes/commerce_realex_redirect.inc',
+  );
+
+  // Path to receive redirect user back to after Realex payment is finished.
+  $items['commerce-realex/redirect/complete'] = array(
+    'page callback' => 'commerce_realex_redirect_checkout_complete',
+    'page arguments' => array(),
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+    'file' => 'includes/commerce_realex_redirect.inc',
+  );
+
   return $items;
 }
 
@@ -39,7 +57,7 @@ function commerce_realex_commerce_payment_method_info() {
 
   $payment_methods['commerce_realex_remote'] = array(
     'title' => t('Realex Remote'),
-    'short_title' => t('Realex'),
+    'short_title' => t('Realex Remote'),
     'display_title' => t('Realex'),
     'description' => t('Integration with Realex using Remote API method.'),
     'active' => TRUE,
@@ -50,6 +68,23 @@ function commerce_realex_commerce_payment_method_info() {
       'submit_form_submit' => 'commerce_realex_remote_commerce_payment_method_submit_form_submit',
     ),
     'file' => 'includes/commerce_realex_remote.inc',
+  );
+
+  $payment_methods['realex_redirect'] = array(
+    'base' => 'commerce_realex_redirect',
+    'title' => t('Realex Redirect'),
+    'short_title' => t('Realex Redirect'),
+    'display_title' => t('Realex'),
+    'description' => t('Integration with Realex using the Redirect method.'),
+    'terminal' => FALSE,
+    'offsite' => TRUE,
+    'offsite_autoredirect' => TRUE,
+    'active' => TRUE,
+    'callbacks' => array(
+      'settings_form' => 'commerce_realex_redirect_commerce_payment_method_settings_form',
+      'submit_form' => 'commerce_realex_redirect_commerce_payment_method_submit_form',
+    ),
+    'file' => 'includes/commerce_realex_redirect.inc',
   );
 
   return $payment_methods;
@@ -255,7 +290,7 @@ class RealexParser {
         $this->record['tsschecks']["$this->currentTSSCheck"] = $cdata;
       }
 
-      $this->record[$this->currentElement] = $cdata;
+      $this->record[$this->currentElement] = (empty($this->record[$this->currentElement]) ? $cdata : $this->record[$this->currentElement] . $cdata);
     }
   }
 
