@@ -269,10 +269,11 @@ class RealexParser {
       if ($this->currentElement == "response_tss_check" and $attr == "ID") {
         $this->currentTSSCheck = $value;
       }
-
-      if ($this->currentElement == 'response' and $attr == "TIMESTAMP") {
-        $this->record['timestamp'] = $value;
+      if ($this->currentElement == 'response' && $attrs['TIMESTAMP']) {
+        $this->record['timestamp'] = $attrs['TIMESTAMP'];
       }
+      $attribute_name = $this->currentElement . '_' . $attr;
+      $this->record[$attribute_name] = $value;
     }
 
     // Clean up the element names to remove the response_ prefix.
