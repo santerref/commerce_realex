@@ -385,9 +385,6 @@ function commerce_realex_remote_do_auth_request($payment_method, $request, &$ord
     if (function_exists('commerce_3d_secure_clear_iframe')) {
       commerce_3d_secure_clear_iframe($redirect);
     }
-    else {
-      drupal_goto($redirect);
-    }
   }
 
   // Unsuccessful payments.
