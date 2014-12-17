@@ -372,11 +372,12 @@ function commerce_realex_remote_do_auth_request($payment_method, $request, &$ord
   // Verify response.
   $success = _commerce_realex_remote_verify_response($type, $request, $response, $order, $payment_method);
 
+  // Save the transaction.
+  $log = isset($request['log_message']) ? $request['log_message'] : '';
+  $transaction = commerce_realex_remote_transaction_save($payment_method, $order, $response, $log);
+
   // Successful payment.
   if ($success) {
-    // Save the transaction.
-    $log = isset($request['log_message']) ? $request['log_message'] : '';
-    $transaction = commerce_realex_remote_transaction_save($payment_method, $order, $response, $log);
     //$order->data['commerce_realex_remote'] = $pane_values;
     $order->data['commerce_realex_remote']['transaction'] = $transaction;
     //commerce_checkout_complete($order);
@@ -771,17 +772,17 @@ function commerce_realex_remote_transaction_save($payment_method, $order, $respo
   // Log the response variables.
   $transaction->message = 'Status @resultcode, @message. Order ID: @orderid, Auth code: @authcode, Timestamp: @timestamp, Pasref: @pasref, Address check: @address, Postcode check: @postcode, CVN result: @cvn, Batch Id: @batchid. @log';
   $transaction->message_variables = array(
-    '@resultcode' => $response['result'],
-    '@message' => $response['message'],
-    '@orderid' => $response['orderid'],
-    '@authcode' => $response['authcode'],
-    '@timestamp' => $response['timestamp'],
-    '@pasref' => $response['pasref'],
-    '@address' => $response['avsaddressresponse'],
-    '@postcode' => $response['avspostcoderesponse'],
-    '@cvn' => $response['cvnresult'],
-    '@batchid' => $response['batchid'],
-    '@log' => $log,
+    '@resultcode' => isset($response['result']) ? $response['result'] : '',
+    '@message' => isset($response['message']) ? $response['message'] : '',
+    '@orderid' => isset($response['orderid']) ? $response['orderid'] : '',
+    '@authcode' => isset($response['authcode']) ? $response['authcode'] : '',
+    '@timestamp' => isset($response['timestamp']) ? $response['timestamp'] : '',
+    '@pasref' => isset($response['pasref']) ? $response['pasref'] : '',
+    '@address' => isset($response['avsaddressresponse']) ? $response['avsaddressresponse'] : '',
+    '@postcode' => isset($response['avspostcoderesponse']) ? $response['avspostcoderesponse'] : '',
+    '@cvn' => isset($response['cvnresult']) ? $response['cvnresult'] : '',
+    '@batchid' => isset($response['batchid']) ? $response['batchid'] : '',
+    '@log' => isset($log) ? $log : '',
   );
 
   commerce_payment_transaction_save($transaction);
