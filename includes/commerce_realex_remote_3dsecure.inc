@@ -43,6 +43,7 @@ function _commerce_realex_get_3dsecure_eci_value($card_type, $scenario) {
       elseif ($scenario == 'no liability shift') {
         $eci = 7;
       }
+      break;
     case 'MC':
     case 'SWITCH':
       if ($scenario == 'not enrolled') {
