@@ -9,8 +9,6 @@
  * @todo
  *   - abstract the helper functions some more for other method types
  *   - add support for DCC transactions
- *   - add support for 3D secure
- *   - add Redirect integration
  */
 
 /**
@@ -28,15 +26,6 @@ function commerce_realex_menu() {
     'file' => 'includes/commerce_realex_remote_3dsecure.inc',
   );
 
-  // Path to receive Realex Redirect IPNs.
-  $items['commerce-realex/redirect/ipn'] = array(
-    'page callback' => 'commerce_realex_redirect_process_ipn',
-    'page arguments' => array(),
-    'access callback' => TRUE,
-    'type' => MENU_CALLBACK,
-    'file' => 'includes/commerce_realex_redirect.inc',
-  );
-
   // Path to receive redirect user back to after Realex payment is finished.
   $items['commerce-realex/redirect/complete'] = array(
     'page callback' => 'commerce_realex_redirect_checkout_complete',
@@ -47,6 +36,23 @@ function commerce_realex_menu() {
   );
 
   return $items;
+}
+
+/**
+ * Implements hook_page_build().
+ */
+function commerce_realex_page_build(&$page) {
+  $current_path = current_path();
+  if (preg_match('/^checkout\/(\d+)\/checkout/', $current_path, $matches)) {
+    $order_id = $matches[1];
+    $order = commerce_order_load($order_id);
+    if (preg_match('/^Realex Redirect:\s+(.+)/', $order->log, $message)) {
+      drupal_set_message($message[1], 'warning');
+      $order->revision = TRUE;
+      $order->log = '';
+      commerce_order_save($order);
+    }
+  }
 }
 
 /**
@@ -70,7 +76,7 @@ function commerce_realex_commerce_payment_method_info() {
     'file' => 'includes/commerce_realex_remote.inc',
   );
 
-  $payment_methods['realex_redirect'] = array(
+  $payment_methods['commerce_realex_redirect'] = array(
     'base' => 'commerce_realex_redirect',
     'title' => t('Realex Redirect'),
     'short_title' => t('Realex Redirect'),
@@ -160,6 +166,11 @@ function _commerce_realex_build_request_sha1hash($request, $type = 'auth') {
     case '3ds-verifysig-response':
       // timestamp.merchantid.orderid.result.message.pasref.authcode
       $hash = $request['timestamp'] . '.' . $request['merchantid'] . '.' . $request['orderid'] . '.' . $request['result'] . '.' . $request['message'] . '.' . $request['pasref'] . '.' . $request['authcode'];
+      break;
+
+    case 'redirect-auth':
+      // timestamp.merchantid.orderid.amount.currency
+      $hash = $request['timestamp'] . '.' . $request['merchantid'] . '.' . $request['orderid'] . '.' . $request['amount'] . '.' . $request['currency'];
       break;
 
     case '3ds-verifysig':

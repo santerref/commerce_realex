@@ -89,8 +89,8 @@ function commerce_realex_remote_commerce_payment_method_settings_form($settings 
 
   $form['auto_settle'] = array(
     '#type' => 'select',
-    '#title' => t('Auto settle flag'),
-    '#options' => array(1 => t('Enabled'), 0 => t('Disabled')),
+    '#title' => t('Payment action'),
+    '#options' => array(1 => t('Authorize and Capture'), 0 => t('Authorize only')),
     '#default_value' => isset($settings['auto_settle']) ?  $settings['auto_settle'] : 1,
     '#required' => TRUE,
   );
@@ -361,7 +361,7 @@ function commerce_realex_remote_commerce_payment_method_submit_form_submit($paym
 /**
  * Do a payment authorization request.
  */
-function commerce_realex_remote_do_auth_request($payment_method, $request, &$order) {
+function commerce_realex_remote_do_auth_request($payment_method, $request, &$order, $extra = array()) {
   // Send the request.
   $type = 'auth';
   $url = $payment_method['settings']['remote_url'];
@@ -374,7 +374,7 @@ function commerce_realex_remote_do_auth_request($payment_method, $request, &$ord
 
   // Save the transaction.
   $log = isset($request['log_message']) ? $request['log_message'] : '';
-  $transaction = commerce_realex_remote_transaction_save($payment_method, $order, $response, $log);
+  $transaction = commerce_realex_remote_transaction_save($payment_method, $order, $response, $log, $extra);
 
   // Successful payment.
   if ($success) {
@@ -750,8 +750,11 @@ function _commerce_realex_remote_build_xml_request_dccrate($request) {
  *   Response data.
  * @param $log
  *   Optional extra log message.
+ * @param $extra
+ *   Optional extra data array, may contain the response message from previous
+ *   steps of the 3D Secure process.
  */
-function commerce_realex_remote_transaction_save($payment_method, $order, $response, $log = '') {
+function commerce_realex_remote_transaction_save($payment_method, $order, $response, $log = '', $extra = array()) {
   $transaction = commerce_payment_transaction_new('commerce_realex_remote', $order->order_id);
   $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
   $commerce_order_total = $order_wrapper->commerce_order_total->value();
@@ -770,20 +773,65 @@ function commerce_realex_remote_transaction_save($payment_method, $order, $respo
   }
 
   // Log the response variables.
-  $transaction->message = 'Status @resultcode, @message. Order ID: @orderid, Auth code: @authcode, Timestamp: @timestamp, Pasref: @pasref, Address check: @address, Postcode check: @postcode, CVN result: @cvn, Batch Id: @batchid. @log';
+  $transaction->message = 'Status @resultcode, @message.<br />Order ID: @orderid,<br />Timestamp: @timestamp<br />';
   $transaction->message_variables = array(
     '@resultcode' => isset($response['result']) ? $response['result'] : '',
     '@message' => isset($response['message']) ? $response['message'] : '',
     '@orderid' => isset($response['orderid']) ? $response['orderid'] : '',
-    '@authcode' => isset($response['authcode']) ? $response['authcode'] : '',
     '@timestamp' => isset($response['timestamp']) ? $response['timestamp'] : '',
-    '@pasref' => isset($response['pasref']) ? $response['pasref'] : '',
-    '@address' => isset($response['avsaddressresponse']) ? $response['avsaddressresponse'] : '',
-    '@postcode' => isset($response['avspostcoderesponse']) ? $response['avspostcoderesponse'] : '',
-    '@cvn' => isset($response['cvnresult']) ? $response['cvnresult'] : '',
-    '@batchid' => isset($response['batchid']) ? $response['batchid'] : '',
-    '@log' => isset($log) ? $log : '',
   );
+  if (!empty($response['authcode'])) {
+    $transaction->message .= 'Auth code: @authcode<br />';
+    $transaction->message_variables['@authcode'] = $response['authcode'];
+  }
+  if (!empty($response['pasref'])) {
+    $transaction->message .= 'Pasref: @pasref<br />';
+    $transaction->message_variables['@pasref'] = $response['pasref'];
+  }
+  if (!empty($response['avsaddressresponse'])) {
+    $transaction->message .= 'Address check: @address<br />';
+    $transaction->message_variables['@address'] = $response['avsaddressresponse'];
+  }
+  if (!empty($response['avspostcoderesponse'])) {
+    $transaction->message .= 'Postcode check: @postcode<br />';
+    $transaction->message_variables['@postcode'] = $response['avspostcoderesponse'];
+  }
+  if (!empty($response['cvnresult'])) {
+    $transaction->message .= 'CVN result: @cvn<br />';
+    $transaction->message_variables['@cvn'] = $response['cvnresult'];
+  }
+  if (!empty($response['batchid'])) {
+    $transaction->message .= 'Batch Id: @batchid<br />';
+    $transaction->message_variables['@batchid'] = $response['batchid'];
+  }
+  if (!empty($response['tss_result'])) {
+    $transaction->message .= 'Transaction suitability score: @tss<br />';
+    $transaction->message_variables['@tss'] = $response['tss_result'];
+  }
+  if (!empty($response['log'])) {
+    $transaction->message .= '@log<br />';
+    $transaction->message_variables['@log'] = $response['log'];
+  }
+  $eci = !empty($response['eci']) ? $response['eci'] : (!empty($extra['threedsecure_eci']) ? $extra['threedsecure_eci'] : NULL);
+  if (!empty($eci)) {
+    $transaction->message .= 'ECI: @eci_scenario (@eci)<br />';
+    $transaction->message_variables['@eci'] = $eci;
+    $transaction->message_variables['@eci_scenario'] = commerce_realex_remote_3dsecure_eci_lookup($eci);
+  }
+  $xid = !empty($response['xid']) ? $response['xid'] : (!empty($extra['threedsecure_xid']) ? $extra['threedsecure_xid'] : NULL);
+  if (!empty($xid)) {
+    $transaction->message .= 'XID: @xid<br />';
+    $transaction->message_variables['@xid'] = $xid;
+  }
+  $cavv = !empty($response['cavv']) ? $response['cavv'] : (!empty($extra['threedsecure_cavv']) ? $extra['threedsecure_cavv'] : NULL);
+  if (!empty($cavv)) {
+    $transaction->message .= 'CAVV: @cavv<br />';
+    $transaction->message_variables['@cavv'] = $cavv;
+  }
+  if (!empty($extra['threedsecure_status'])) {
+    $transaction->message .= '3D Secure Status: @threedsecure_status<br />';
+    $transaction->message_variables['@threedsecure_status'] = $extra['threedsecure_status'];
+  }
 
   commerce_payment_transaction_save($transaction);
 
