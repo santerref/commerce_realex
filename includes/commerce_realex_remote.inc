@@ -761,7 +761,7 @@ function commerce_realex_remote_transaction_save($payment_method, $order, $respo
   $transaction->amount = $commerce_order_total['amount'];
   $transaction->currency_code = $commerce_order_total['currency_code'];
   $transaction->instance_id = $payment_method['instance_id'];
-  $transaction->remote_id = $response['orderid'];
+  $transaction->remote_id = isset($response['orderid']) ? $response['orderid'] : '';
 
   // Set the payment status.
   switch ($response['result']) {
