@@ -64,7 +64,7 @@ function commerce_realex_commerce_payment_method_info() {
   $payment_methods['commerce_realex_remote'] = array(
     'title' => t('Realex Remote'),
     'short_title' => t('Realex Remote'),
-    'display_title' => t('Realex'),
+    'display_title' => t('Pay by Credit or Debit Card'),
     'description' => t('Integration with Realex using Remote API method.'),
     'active' => TRUE,
     'callbacks' => array(
@@ -80,7 +80,7 @@ function commerce_realex_commerce_payment_method_info() {
     'base' => 'commerce_realex_redirect',
     'title' => t('Realex Redirect'),
     'short_title' => t('Realex Redirect'),
-    'display_title' => t('Realex'),
+    'display_title' => t('Pay by Credit or Debit Card'),
     'description' => t('Integration with Realex using the Redirect method.'),
     'terminal' => FALSE,
     'offsite' => TRUE,

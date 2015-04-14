@@ -78,7 +78,7 @@ function commerce_realex_redirect_commerce_payment_method_settings_form($setting
  */
 function commerce_realex_redirect_commerce_payment_method_submit_form($payment_method, $pane_values, $checkout_pane, $order) {
   $form['commmerce_realex_redirect_markup'] = array(
-    '#markup' => '<span class="commerce-realex-redirect-information">' . t('Continue with checkout to complete payment via Realex Redirect.') . '</span>',
+    '#markup' => '<span class="commerce-realex-redirect-information">' . t('You will be redirected to the Realex Payments Hosted Payment Page to complete your order.') . '</span>',
   );
 
   return $form;
