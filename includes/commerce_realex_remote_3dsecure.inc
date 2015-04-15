@@ -138,12 +138,12 @@ function commerce_realex_remote_do_3dsecure_verify_enrolled_request($payment_met
 
     // Other response codes - liability shift required, so stop and show error.
     else {
-      $transaction = commerce_realex_remote_transaction_save($payment_method, $order, $response, $log);
+      $transaction = commerce_realex_remote_transaction_save($payment_method, $order, $response);
       $order->data['commerce_realex_remote']['transaction'] = $transaction;
       commerce_realex_remote_3dsecure_previous_page($order);
 
       drupal_set_message(t('We were unable to process your credit card payment as we were unable to ascertain whether the card is 3D Secure; reason provided by bank: %message. If the problem persists, contact us to complete your order.', array('%message' => $response['message'])), 'warning');
-      watchdog('commerce_realex', 'Payment failed: %message', array('%message' => $response['message']), WATCHDOG_WARNING);
+      watchdog('commerce_realex', '2Payment failed: %message', array('%message' => $response['message']), WATCHDOG_WARNING);
       if (empty($_SESSION['realex_failures'])) {
         $_SESSION['realex_failures'] = 0;
       }
@@ -334,7 +334,7 @@ function _commerce_realex_process_3dsecure_verifysig_response($response, $reques
     drupal_set_message(t('3D Secure verification failed. Payment could not be processed: %message.', array('%message' => $message)), 'error');
 
     // Get rid of the iframe and redirect to payment failed url.
-    $transaction = commerce_realex_remote_transaction_save($payment_method, $order, $response, $log);
+    $transaction = commerce_realex_remote_transaction_save($payment_method, $order, $response);
     $order->data['commerce_realex_remote']['transaction'] = $transaction;
     commerce_realex_remote_3dsecure_previous_page($order);
     $redirect = commerce_checkout_order_uri($order);
@@ -428,4 +428,5 @@ function commerce_realex_remote_3dsecure_eci_lookup($eci) {
   }
   return $scenario;
 }
+
 
