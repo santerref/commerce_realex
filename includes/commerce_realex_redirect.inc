@@ -160,6 +160,7 @@ function commerce_realex_redirect_redirect_form($form, &$form_state, $order, $pa
       $data['COMMENT1'] = substr($data['COMMENT1'], 0, 252) . '...';
     }
   }
+  $data['COMMENT2'] = _commerce_realex_get_module_versions();
 
   // Load the customer billing profile for the order.
   if (!empty($order->commerce_customer_billing)) {

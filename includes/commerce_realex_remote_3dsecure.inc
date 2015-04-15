@@ -220,6 +220,7 @@ function commerce_realex_3dsecure_callback($order) {
 
   $request['products'] = implode(',', $products);
   $request['comments'][0] = t('Products purchased:') . ' ' . implode(', ', $comments);
+  $request['comments'][1] = _commerce_realex_get_module_versions();
   $request['log_message'] = '';
 
   // Build the sha1hash.

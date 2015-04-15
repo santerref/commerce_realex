@@ -250,6 +250,24 @@ function _commerce_realex_supported_card_types() {
   );
 }
 
+/**
+ * Return the Drupal Commerce and Commerce Realex versions for sending to Realex
+ * in the Comment2 field.
+ */
+function _commerce_realex_get_module_versions() {
+  $commerce_path = drupal_get_path('module', 'commerce');
+  $commerce_info_file = $commerce_path . '/commerce.info';
+  $commerce_info = drupal_parse_info_file($commerce_info_file);
+  $commerce_version = empty($commerce_info['version']) ? 'Unknown ' . $commerce_info['core'] : $commerce_info['version'];
+
+  $commerce_realex_path = drupal_get_path('module', 'commerce_realex');
+  $commerce_realex_info_file = $commerce_realex_path . '/commerce_realex.info';
+  $commerce_realex_info = drupal_parse_info_file($commerce_realex_info_file);
+  $commerce_realex_version = empty($commerce_realex_info['version']) ? 'Unknown ' . $commerce_realex_info['core'] : $commerce_realex_info['version'];
+
+  return 'Drupal Commerce ' . $commerce_version . ' | Commerce Realex ' . $commerce_realex_version;
+}
+
 
 /**
  * Parse the response XML and create and object.
