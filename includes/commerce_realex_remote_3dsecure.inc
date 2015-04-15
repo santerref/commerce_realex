@@ -138,7 +138,7 @@ function commerce_realex_remote_do_3dsecure_verify_enrolled_request($payment_met
 
     // Other response codes - liability shift required, so stop and show error.
     else {
-      $transaction = commerce_realex_remote_transaction_save($payment_method, $order, $response, $log);
+      $transaction = commerce_realex_remote_transaction_save($payment_method, $order, $response);
       $order->data['commerce_realex_remote']['transaction'] = $transaction;
       commerce_realex_remote_3dsecure_previous_page($order);
 
@@ -334,7 +334,7 @@ function _commerce_realex_process_3dsecure_verifysig_response($response, $reques
     drupal_set_message(t('3D Secure verification failed. Payment could not be processed: %message.', array('%message' => $message)), 'error');
 
     // Get rid of the iframe and redirect to payment failed url.
-    $transaction = commerce_realex_remote_transaction_save($payment_method, $order, $response, $log);
+    $transaction = commerce_realex_remote_transaction_save($payment_method, $order, $response);
     $order->data['commerce_realex_remote']['transaction'] = $transaction;
     commerce_realex_remote_3dsecure_previous_page($order);
     $redirect = commerce_checkout_order_uri($order);
