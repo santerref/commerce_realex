@@ -149,7 +149,6 @@ function commerce_realex_redirect_redirect_form($form, &$form_state, $order, $pa
     'VAR_REF' => $request['varref'],
     'COMMERCE_ORDER_ID' => $order->order_id,
     'COMMERCE_ORDER_NUMBER' => $order->order_number,
-    'RETURN_TSS' => 1,
   );
 
   if (!empty($request['products'])) {
@@ -373,7 +372,6 @@ function commerce_realex_redirect_transaction_save($payment_method, $order, $res
   }
 
   // Log the response variables.
-  watchdog('realex debug', print_r($response, 'true'));
   $transaction->message = 'Status @resultcode, @message.<br />Order ID: @orderid,<br />Timestamp: @timestamp<br />';
   $transaction->message_variables = array(
     '@resultcode' => isset($response['result']) ? $response['result'] : '',
@@ -405,9 +403,9 @@ function commerce_realex_redirect_transaction_save($payment_method, $order, $res
     $transaction->message .= 'Batch Id: @batchid<br />';
     $transaction->message_variables['@batchid'] = $response['batchid'];
   }
-  if (!empty($response['tss'])) {
+  if (!empty($response['tss']['result'])) {
     $transaction->message .= 'Transaction suitability score: @tss<br />';
-    $transaction->message_variables['@tss'] = $response['tss'];
+    $transaction->message_variables['@tss'] = $response['tss']['result'];
   }
   if (!empty($response['log'])) {
     $transaction->message .= '@log<br />';

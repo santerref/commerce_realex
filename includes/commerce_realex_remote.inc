@@ -372,8 +372,6 @@ function commerce_realex_remote_do_auth_request($payment_method, $request, &$ord
 
   // Verify response.
   $success = _commerce_realex_remote_verify_response($type, $request, $response, $order, $payment_method);
-  watchdog('realex debug', print_r($response, 'true'));
-  watchdog('realex debug extra', print_r($extra, 'true'));
 
   // Save the transaction.
   $log = isset($request['log_message']) ? $request['log_message'] : '';
@@ -395,7 +393,7 @@ function commerce_realex_remote_do_auth_request($payment_method, $request, &$ord
   else {
     // Payment failure.
     drupal_set_message(t('We were unable to process your credit card payment; reason provided by bank: %message. If the problem persists, contact us to complete your order.', array('%message' => $response['message'])), 'warning');
-    watchdog('commerce_realex', '1Payment failed: %message', array('%message' => $response['message']), WATCHDOG_WARNING);
+    watchdog('commerce_realex', 'Payment failed: %message', array('%message' => $response['message']), WATCHDOG_WARNING);
 
     if (empty($_SESSION['realex_failures'])) {
       $_SESSION['realex_failures'] = 0;
