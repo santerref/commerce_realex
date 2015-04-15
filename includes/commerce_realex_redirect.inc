@@ -192,7 +192,7 @@ function commerce_realex_redirect_redirect_form($form, &$form_state, $order, $pa
     $postcode = isset($address['postal_code']) ? check_plain($address['postal_code']) : '';
     $zip_numbers = preg_replace('/[^0-9]/', '', $postcode);
     $street_numbers = preg_replace('/[^0-9]/', '', $street_one);
-    $zip_postal_code = $zip_numbers . '|' . $street_numbers;
+    $zip_postal_code = substr($zip_numbers, 0, 5) . '|' . substr($street_numbers, 0, 5);
     $zip_postal_code = ($zip_postal_code == '|') ? '' : $zip_postal_code;
     $country = isset($address['country']) ? check_plain($address['country']) : '';
 
