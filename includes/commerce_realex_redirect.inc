@@ -42,11 +42,12 @@ function commerce_realex_redirect_commerce_payment_method_settings_form($setting
     '#default_value' => isset($settings['test_mode']) ? $settings['test_mode'] : 0,
   );
 
-  $form['redirect_response_page'] = array(
+  $form['redirect_referring_url'] = array(
     '#type' => 'textfield',
-    '#title' => t('Response Page'),
-    '#description' => t('The absolute url to the page on your site which the Realex Redirect template redirects to. You will need to give this url to Realex when they set up your account.'),
-    '#default_value' => isset($settings['redirect_response_page']) ?  $settings['redirect_response_page'] : url('commerce-realex/redirect/complete', array('absolute' => TRUE)),
+    '#title' => t('Referring URL'),
+    '#description' => t('The absolute url to the page on your site from which
+    the Realex payment gateway will be referred by. You will need to give this url to Realex when they set up your account.'),
+    '#default_value' => isset($settings['redirect_referring_url']) ? $settings['redirect_referring_url'] : url('checkout/', array('absolute' => TRUE)) . '(.*)',
     '#required' => TRUE,
     '#disabled' => TRUE,
   );
