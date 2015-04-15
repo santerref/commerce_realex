@@ -271,7 +271,8 @@ function commerce_realex_redirect_checkout_complete() {
   $order = commerce_order_status_update($order, 'checkout_checkout', FALSE, TRUE, t('Realex Redirect:') . ' ' . $message);
   drupal_set_message($message, 'warning');
   watchdog('commerce_realex', 'Payment failed: %message', array('%message' => $response['message']), WATCHDOG_WARNING);
-  $url = url('checkout/', array('absolute' => TRUE));
+  $uri = commerce_checkout_order_uri($order);
+  $url = url($uri, array('absolute' => TRUE, 'query' => array('realex' => serialize($message))));
   return _commerce_realex_redirect_back($url);
 }
 

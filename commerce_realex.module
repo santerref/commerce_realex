@@ -121,6 +121,17 @@ function commerce_realex_commerce_checkout_pane_info() {
 */
 
 /**
+ * Implements hook_commerce_checkout_router().
+ */
+function commerce_realex_commerce_checkout_router($order, $checkout_page) {
+  $url_parameters = drupal_get_query_parameters();
+  if (!empty($url_parameters['realex']) && $checkout_page['page_id'] == 'realex') {
+    $message = unserialize($url_parameters['realex']);
+    drupal_set_message($message, 'warning');
+  }
+}
+
+/**
  * Send the request to Realex Payments.
  *
  * @param $url
