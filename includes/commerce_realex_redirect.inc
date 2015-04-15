@@ -149,6 +149,7 @@ function commerce_realex_redirect_redirect_form($form, &$form_state, $order, $pa
     'VAR_REF' => $request['varref'],
     'COMMERCE_ORDER_ID' => $order->order_id,
     'COMMERCE_ORDER_NUMBER' => $order->order_number,
+    'RETURN_TSS' => 1,
   );
 
   if (!empty($request['products'])) {
@@ -403,9 +404,9 @@ function commerce_realex_redirect_transaction_save($payment_method, $order, $res
     $transaction->message .= 'Batch Id: @batchid<br />';
     $transaction->message_variables['@batchid'] = $response['batchid'];
   }
-  if (!empty($response['tss']['result'])) {
+  if (!empty($response['tss'])) {
     $transaction->message .= 'Transaction suitability score: @tss<br />';
-    $transaction->message_variables['@tss'] = $response['tss']['result'];
+    $transaction->message_variables['@tss'] = $response['tss'];
   }
   if (!empty($response['log'])) {
     $transaction->message .= '@log<br />';
