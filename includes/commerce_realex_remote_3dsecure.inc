@@ -150,7 +150,7 @@ function commerce_realex_remote_do_3dsecure_verify_enrolled_request($payment_met
       $_SESSION['realex_failures']++;
 
       $redirect = commerce_checkout_order_uri($order);
-      commerce_3d_secure_clear_iframe($redirect);
+      drupal_goto($redirect);
     }
   }
 }
