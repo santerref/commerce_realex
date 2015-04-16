@@ -2,7 +2,7 @@
 
 /**
  * @file
- * Callback methods for Realex Remote integration.
+ * Callback methods for Realex Payments Remote integration.
  */
 
 /**
@@ -13,7 +13,7 @@ function commerce_realex_remote_commerce_payment_method_settings_form($settings 
 
   $form['merchant_id'] = array(
     '#type' => 'textfield',
-    '#title' => t('Realex Merchant ID'),
+    '#title' => t('Realex Payments Merchant ID'),
     '#default_value' => isset($settings['merchant_id']) ? $settings['merchant_id'] : '',
     '#size' => 16,
     '#required' => TRUE,
@@ -21,7 +21,7 @@ function commerce_realex_remote_commerce_payment_method_settings_form($settings 
 
   $form['account_id'] = array(
     '#type' => 'textfield',
-    '#title' => t('Realex Account ID'),
+    '#title' => t('Realex Payments Account ID'),
     '#default_value' => isset($settings['account_id']) ? $settings['account_id'] : '',
     '#size' => 16,
     '#required' => FALSE,
@@ -37,8 +37,8 @@ function commerce_realex_remote_commerce_payment_method_settings_form($settings 
 
   $form['remote_url'] = array(
     '#type' => 'textfield',
-    '#title' => t('Realex Remote XML URL'),
-    '#description' => t('The Realex URL to submit the order to.'),
+    '#title' => t('Realex Payments Remote XML URL'),
+    '#description' => t('The Realex Payments URL to submit the order to.'),
     '#default_value' => isset($settings['remote_url']) ?  $settings['remote_url'] : 'https://epage.payandshop.com/epage-remote.cgi',
     '#size' => 50,
     '#required' => TRUE,
@@ -53,8 +53,8 @@ function commerce_realex_remote_commerce_payment_method_settings_form($settings 
 
     $form['3dsecure_remote_url'] = array(
       '#type' => 'textfield',
-      '#title' => t('Realex 3D Secure XML URL'),
-      '#description' => t('The Realex URL to submit the order to.'),
+      '#title' => t('Realex Payments 3D Secure XML URL'),
+      '#description' => t('The Realex Payments URL to submit the order to.'),
       '#default_value' => isset($settings['3dsecure_remote_url']) ? $settings['3dsecure_remote_url'] : 'https://epage.payandshop.com/epage-3dsecure.cgi',
       '#size' => 50,
       '#required' => TRUE,
@@ -83,7 +83,7 @@ function commerce_realex_remote_commerce_payment_method_settings_form($settings 
       '#title' => t('Use 3D Secure'),
       '#default_value' => 0,
       '#attributes' => array('disabled' => 'disabled'),
-      '#description' => t('Enable the Commerce 3D Secure module if you wish to enable 3D Secure transactions for Realex.'),
+      '#description' => t('Enable the Commerce 3D Secure module if you wish to enable 3D Secure transactions for Realex Payments.'),
     );
   }
 
@@ -115,7 +115,7 @@ function commerce_realex_remote_commerce_payment_method_settings_form($settings 
       'fexco' => 'Fexco',
       'euroConex' => 'Elavon',
      ),
-    '#description' => t('Should DCC be available to the user? You must have this preconfigured on your Realex sub-account in advance.'),
+    '#description' => t('Should DCC be available to the user? You must have this preconfigured on your Realex Payments sub-account in advance.'),
     '#default_value' => isset($settings['dcc_provider']) ? $settings['dcc_provider'] : 'none',
   );
   */
@@ -138,7 +138,7 @@ function commerce_realex_remote_commerce_payment_method_settings_form($settings 
 
   $form['cctype_accounts'] = array(
     '#type' => 'fieldset',
-    '#title' => t('Realex card type account settings'),
+    '#title' => t('Realex Payments card type account settings'),
     '#collapsible' => TRUE,
     '#collapsed' => FALSE,
     '#states' => array(
@@ -413,7 +413,7 @@ function commerce_realex_remote_do_auth_request($payment_method, $request, &$ord
 }
 
 /**
- * Contact Realex to get a DCC offer.
+ * Contact Realex Payments to get a DCC offer.
  */
 function commerce_realex_remote_get_dcc_offer($payment_method, $pane_values, &$order, $charge) {
   $start_date = NULL;
@@ -529,7 +529,7 @@ function commerce_realex_remote_get_dcc_offer($payment_method, $pane_values, &$o
 }
 
 /**
- * Process the Realex response.
+ * Process the Realex Payments response.
  *
  * @param $type
  *   Message response type.
@@ -561,7 +561,7 @@ function _commerce_realex_remote_verify_response($type, $request, &$response, $o
   $authcode = isset($response['authcode']) ? $response['authcode'] : ''; // Needed for Fexco DCC.
 
   // This digital signature should correspond to the one Realex Payments returns
-  // and can therefore be used to verify the message Realex sends back.
+  // and can therefore be used to verify the message Realex Payments sends back.
   $tmp = "$timestamp.$merchantid.$orderid.$resultcode.$message.$pasref.$authcode";
   $sha1hash = sha1($tmp);
   $tmp = "$sha1hash.$secret";

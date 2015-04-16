@@ -26,7 +26,7 @@ function commerce_realex_menu() {
     'file' => 'includes/commerce_realex_remote_3dsecure.inc',
   );
 
-  // Path to receive redirect user back to after Realex payment is finished.
+  // Path to receive redirect user back to after Realex Payments payment is finished.
   $items['commerce-realex/redirect/complete'] = array(
     'page callback' => 'commerce_realex_redirect_checkout_complete',
     'page arguments' => array(),
@@ -46,7 +46,7 @@ function commerce_realex_page_build(&$page) {
   if (preg_match('/^checkout\/(\d+)\/checkout/', $current_path, $matches)) {
     $order_id = $matches[1];
     $order = commerce_order_load($order_id);
-    if (preg_match('/^Realex Redirect:\s+(.+)/', $order->log, $message)) {
+    if (preg_match('/^Realex Payments Redirect:\s+(.+)/', $order->log, $message)) {
       drupal_set_message($message[1], 'warning');
       $order->revision = TRUE;
       $order->log = '';
@@ -62,10 +62,10 @@ function commerce_realex_commerce_payment_method_info() {
   $payment_methods = array();
 
   $payment_methods['commerce_realex_remote'] = array(
-    'title' => t('Realex Remote'),
-    'short_title' => t('Realex Remote'),
+    'title' => t('Realex Payments Remote'),
+    'short_title' => t('Realex Payments Remote'),
     'display_title' => t('Pay by Credit or Debit Card'),
-    'description' => t('Integration with Realex using Remote API method.'),
+    'description' => t('Integration with Realex Payments using Remote API method.'),
     'active' => TRUE,
     'callbacks' => array(
       'settings_form' => 'commerce_realex_remote_commerce_payment_method_settings_form',
@@ -78,10 +78,10 @@ function commerce_realex_commerce_payment_method_info() {
 
   $payment_methods['commerce_realex_redirect'] = array(
     'base' => 'commerce_realex_redirect',
-    'title' => t('Realex Redirect'),
-    'short_title' => t('Realex Redirect'),
+    'title' => t('Realex Payments Redirect'),
+    'short_title' => t('Realex Payments Redirect'),
     'display_title' => t('Pay by Credit or Debit Card'),
-    'description' => t('Integration with Realex using the Redirect method.'),
+    'description' => t('Integration with Realex Payments using the Redirect method.'),
     'terminal' => FALSE,
     'offsite' => TRUE,
     'offsite_autoredirect' => TRUE,
@@ -198,14 +198,14 @@ function _commerce_realex_build_request_sha1hash($request, $type = 'auth') {
 }
 
 /**
- * Map card types to codes expected by Realex.
+ * Map card types to codes expected by Realex Payments.
  *
  * @param $card
  *   Card name.
  * @param $number
  *   Card number - needed for checking bin ranges.
  * @return
- *   Realex card type code.
+ *   Realex Payments card type code.
  */
 function _commerce_realex_get_card_type($card, $number) {
   $bin_range = substr($number, 0, 4);
@@ -234,7 +234,7 @@ function _commerce_realex_get_card_type($card, $number) {
 }
 
 /**
- * Retrieve list of card types supported by Realex.
+ * Retrieve list of card types supported by Realex Payments.
  */
 function _commerce_realex_supported_card_types() {
   return array(
@@ -251,7 +251,7 @@ function _commerce_realex_supported_card_types() {
 }
 
 /**
- * Return the Drupal Commerce and Commerce Realex versions for sending to Realex
+ * Return the Drupal Commerce and Commerce Realex versions for sending to Realex Payments
  * in the Comment2 field.
  */
 function _commerce_realex_get_module_versions() {
@@ -272,7 +272,7 @@ function _commerce_realex_get_module_versions() {
 /**
  * Parse the response XML and create and object.
  *
- * Code below is based on sample code provided by Realex at http://resource.realexpayments.com/m.php?ct=integration_oscode.php
+ * Code below is based on sample code provided by Realex Payments at http://resource.realexpayments.com/m.php?ct=integration_oscode.php
  */
 class RealexParser {
 

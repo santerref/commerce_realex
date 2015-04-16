@@ -6,7 +6,8 @@
 function commerce_realex_remote_dcc_pane_checkout_form($form, &$form_state, $checkout_pane, $order) {
   $pane_form = array();
 
-  // Don't display this checkout pane if the payment method isn't Realex Remote.
+  // Don't display this checkout pane if the payment method isn't Realex
+  // Payments Remote.
   if ($order->data['payment_method'] != 'commerce_realex_remote|commerce_payment_commerce_realex_remote') {
     return $pane_form;
   }

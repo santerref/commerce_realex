@@ -2,7 +2,7 @@
 
 /**
  * @file
- * Callback methods for Realex Redirect integration.
+ * Callback methods for Realex Payments Redirect integration.
  */
 
 /**
@@ -13,7 +13,7 @@ function commerce_realex_redirect_commerce_payment_method_settings_form($setting
 
   $form['merchant_id'] = array(
     '#type' => 'textfield',
-    '#title' => t('Realex Merchant ID'),
+    '#title' => t('Realex Payments Merchant ID'),
     '#default_value' => isset($settings['merchant_id']) ? $settings['merchant_id'] : '',
     '#size' => 16,
     '#required' => TRUE,
@@ -21,7 +21,7 @@ function commerce_realex_redirect_commerce_payment_method_settings_form($setting
 
   $form['account_id'] = array(
     '#type' => 'textfield',
-    '#title' => t('Realex Account ID'),
+    '#title' => t('Realex Payments Account ID'),
     '#default_value' => isset($settings['account_id']) ?  $settings['account_id'] : '',
     '#size' => 16,
     '#required' => TRUE,
@@ -38,7 +38,7 @@ function commerce_realex_redirect_commerce_payment_method_settings_form($setting
   $form['test_mode'] = array(
     '#type' => 'checkbox',
     '#title' => t('Enable test mode'),
-    '#description' => t('If enabled, the transactions go to a sandbox Realex server.'),
+    '#description' => t('If enabled, the transactions go to a sandbox Realex Payments server.'),
     '#default_value' => isset($settings['test_mode']) ? $settings['test_mode'] : 0,
   );
 
@@ -46,7 +46,7 @@ function commerce_realex_redirect_commerce_payment_method_settings_form($setting
     '#type' => 'textfield',
     '#title' => t('Referring URL'),
     '#description' => t('The absolute url to the page on your site from which
-    the Realex payment gateway will be referred by. You will need to give this url to Realex when they set up your account.'),
+    the Realex Payments gateway will be referred by. You will need to give this url to Realex Payments when they set up your account.'),
     '#default_value' => isset($settings['redirect_referring_url']) ? $settings['redirect_referring_url'] : url('checkout/', array('absolute' => TRUE)) . '(.*)',
     '#required' => TRUE,
     '#disabled' => TRUE,
@@ -92,7 +92,7 @@ function commerce_realex_redirect_commerce_payment_method_submit_form($payment_m
 function commerce_realex_redirect_redirect_form($form, &$form_state, $order, $payment_method) {
   // Return an error if the enabling action's settings haven't been configured.
   if (empty($payment_method['settings']['merchant_id'])) {
-    drupal_set_message(t('Realex is not configured for use. No Realex merchant ID has been specified.'), 'error');
+    drupal_set_message(t('Realex Payments is not configured for use. No Realex Payments merchant ID has been specified.'), 'error');
     return array();
   }
 
@@ -218,7 +218,7 @@ function commerce_realex_redirect_redirect_form($form, &$form_state, $order, $pa
 
   $form['submit'] = array(
     '#type' => 'submit',
-    '#value' => t('Proceed to Realex'),
+    '#value' => t('Proceed to Realex Payments'),
   );
 
   return $form;
@@ -271,7 +271,7 @@ function commerce_realex_redirect_checkout_complete() {
 
   // Invalid response or failure.
   $message = t('We were unable to process your credit card payment; reason provided by bank: %message. If the problem persists, contact us to complete your order.', array('%message' => $response['message']));
-  $order = commerce_order_status_update($order, 'checkout_checkout', FALSE, TRUE, t('Realex Redirect:') . ' ' . $message);
+  $order = commerce_order_status_update($order, 'checkout_checkout', FALSE, TRUE, t('Realex Payments Redirect:') . ' ' . $message);
   drupal_set_message($message, 'warning');
   watchdog('commerce_realex', 'Payment failed: %message', array('%message' => $response['message']), WATCHDOG_WARNING);
   $uri = commerce_checkout_order_uri($order);
@@ -319,7 +319,7 @@ function _commerce_realex_redirect_verify_response(&$response, $order, $payment_
   $authcode = isset($response['authcode']) ? $response['authcode'] : '';
 
   // This digital signature should correspond to the one Realex Payments returns
-  // and can therefore be used to verify the message Realex sends back.
+  // and can therefore be used to verify the message Realex Payments sends back.
   $tmp = "$timestamp.$merchantid.$orderid.$resultcode.$message.$pasref.$authcode";
   $sha1hash = sha1($tmp);
   $tmp = "$sha1hash.$secret";
