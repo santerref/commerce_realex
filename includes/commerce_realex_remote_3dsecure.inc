@@ -107,7 +107,12 @@ function commerce_realex_remote_do_3dsecure_verify_enrolled_request($payment_met
     // Create a $md variable which is a string of useful information that will be mirrored in the 3d process.
     $md = 'payment_method_id=' . $payment_method['method_id'] . '&orderid=' . $response['orderid'] . '&ccnumber=' . $request['ccnumber'] . '&chname=' . $request['chname'] . '&cctype=' . $request['cctype'] . '&issueno=' . $request['issueno'] . '&currency=' . $request['currency'] . '&amount=' . $request['amount'] . '&expiry_date=' . $request['expiry_date'];
     $key = 'realex' . $response['pareq'] . 'commerce';
-    $md = base64_encode(mcrypt_encrypt(MCRYPT_RIJNDAEL_256, md5($key), $md, MCRYPT_MODE_CBC, md5(md5($key))));
+    if (function_exists('mcrypt_encrypt')) {
+      $md = base64_encode(mcrypt_encrypt(MCRYPT_RIJNDAEL_256, md5($key), $md, MCRYPT_MODE_CBC, md5(md5($key))));
+    }
+    else {
+      $md = base64_encode(mcrypt_cbc(MCRYPT_RIJNDAEL_256, md5($key), $md, MCRYPT_ENCRYPT, md5(md5($key))));
+    }
 
     // Save the data to process the 3D Secure response.
     $secure_data = array();
@@ -172,7 +177,12 @@ function commerce_realex_3dsecure_callback($order) {
 
   $md = $_POST['MD'];
   $key = 'realex' . $order->data['extra_authorisation']['PAReq'] . 'commerce';
-  $md = rtrim(mcrypt_decrypt(MCRYPT_RIJNDAEL_256, md5($key), base64_decode($md), MCRYPT_MODE_CBC, md5(md5($key))), "\0");
+  if (function_exists('mcrypt_decrypt')) {
+    $md = rtrim(mcrypt_decrypt(MCRYPT_RIJNDAEL_256, md5($key), base64_decode($md), MCRYPT_MODE_CBC, md5(md5($key))), "\0");
+  }
+  else {
+    $md = rtrim(mcrypt_cbc(MCRYPT_RIJNDAEL_256, md5($key), base64_decode($md), MCRYPT_DECRYPT, md5(md5($key))), "\0");
+  }
 
   // The MD POST variable makes the foundation for our $request for 3ds-verifysig.
   $md = explode('&', $md);
