@@ -292,8 +292,8 @@ function _commerce_realex_process_3dsecure_verifysig_response($response, $reques
       case 'N':
         // The cardholder did not authenticate successfully – if you authorise
         // this transaction you will be liable for any chargebacks.
+        $request['log_message'] .= t('3ds-verifysig: Cardholder failed to authenticate, no liability shift. (3D Secure status: @status)', array('@status' => $response['threedsecure_status']));
         if (!$require_liability_shift) {
-          $request['log_message'] .= t('3ds-verifysig: Cardholder failed to authenticate, no liability shift. (3D Secure status: @status)', array('@status' => $response['threedsecure_status']));
           $request['eci'] = _commerce_realex_get_3dsecure_eci_value($request['cctype'], 'no liability shift');
           $send_auth = TRUE;
         }
@@ -303,8 +303,8 @@ function _commerce_realex_process_3dsecure_verifysig_response($response, $reques
       case 'U':
         // Cardholder authentication temporarily unavailable – no liability
         // shift available.
+        $request['log_message'] .= t('3ds-verifysig: Cardholder authentication temporarily unavailable, no liability shift. (3D Secure status: @status)', array('@status' => $response['threedsecure_status']));
         if (!$require_liability_shift) {
-          $request['log_message'] .= t('3ds-verifysig: Cardholder authentication temporarily unavailable, no liability shift. (3D Secure status: @status)', array('@status' => $response['threedsecure_status']));
           $request['eci'] = _commerce_realex_get_3dsecure_eci_value($request['cctype'], 'no liability shift');
           $send_auth = TRUE;
         }
@@ -316,15 +316,17 @@ function _commerce_realex_process_3dsecure_verifysig_response($response, $reques
   }
 
   // Failure response.
-  elseif (!$require_liability_shift) {
+  else {
     $request['log_message'] .= t('3ds-verifysig: Cardholder authentication failed (response code @status), no liability shift.', array('@status' => $response['result']));
     $request['eci'] = _commerce_realex_get_3dsecure_eci_value($request['cctype'], 'no liability shift');
   }
 
-  $transaction = commerce_realex_remote_transaction_save('3ds-verifysig', $payment_method, $order, $response);
+  $log = isset($request['log_message']) ? $request['log_message'] : '';
+  $transaction = commerce_realex_remote_transaction_save('3ds-verifysig', $payment_method, $order, $response, $log);
+  unset($request['log_message']);
 
   if ($send_auth) {
-    commerce_realex_remote_do_auth_request($payment_method, $request, $order, $response);
+    commerce_realex_remote_do_auth_request($payment_method, $request, $order);
   }
 
   else {
@@ -427,4 +429,5 @@ function commerce_realex_remote_3dsecure_eci_lookup($eci) {
   }
   return $scenario;
 }
+
 

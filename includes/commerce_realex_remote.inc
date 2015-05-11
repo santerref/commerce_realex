@@ -362,7 +362,7 @@ function commerce_realex_remote_commerce_payment_method_submit_form_submit($paym
 /**
  * Do a payment authorization request.
  */
-function commerce_realex_remote_do_auth_request($payment_method, $request, &$order, $extra = array()) {
+function commerce_realex_remote_do_auth_request($payment_method, $request, &$order) {
   // Send the request.
   $type = 'auth';
   $url = $payment_method['settings']['remote_url'];
@@ -375,7 +375,12 @@ function commerce_realex_remote_do_auth_request($payment_method, $request, &$ord
 
   // Save the transaction.
   $log = isset($request['log_message']) ? $request['log_message'] : '';
-  $transaction = commerce_realex_remote_transaction_save($type, $payment_method, $order, $response, $log, $extra);
+  if (!empty($request['eci'])) {
+    $eci_scenario = commerce_realex_remote_3dsecure_eci_lookup($request['eci']);
+    $log = 'ECI sent: ' . $eci_scenario . ' (' . $request['eci'] . ')<br />' . $log;
+  }
+  $transaction = commerce_realex_remote_transaction_save($type, $payment_method, $order, $response, $log);
+  unset($request['log_message']);
 
   // Successful payment.
   if ($success) {
@@ -751,11 +756,8 @@ function _commerce_realex_remote_build_xml_request_dccrate($request) {
  *   Response data.
  * @param $log
  *   Optional extra log message.
- * @param $extra
- *   Optional extra data array, may contain the response message from previous
- *   steps of the 3D Secure process.
  */
-function commerce_realex_remote_transaction_save($transaction_type, $payment_method, $order, $response, $log = '', $extra = array()) {
+function commerce_realex_remote_transaction_save($transaction_type, $payment_method, $order, $response, $log = '') {
   $transaction = commerce_payment_transaction_new('commerce_realex_remote', $order->order_id);
   $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
   $commerce_order_total = $order_wrapper->commerce_order_total->value();
@@ -817,13 +819,13 @@ function commerce_realex_remote_transaction_save($transaction_type, $payment_met
     $transaction->message .= 'Transaction suitability score: @tss<br />';
     $transaction->message_variables['@tss'] = $response['tss_result'];
   }
-  $eci = !empty($response['eci']) ? $response['eci'] : (!empty($response['threedsecure_eci']) ? $response['threedsecure_eci'] : (!empty($extra['threedsecure_eci']) ? $extra['threedsecure_eci'] : NULL));
+  $eci = !empty($response['eci']) ? $response['eci'] : (!empty($response['threedsecure_eci']) ? $response['threedsecure_eci'] : NULL);
   if (!empty($eci)) {
     $transaction->message .= 'ECI: @eci_scenario (@eci)<br />';
     $transaction->message_variables['@eci'] = $eci;
     $transaction->message_variables['@eci_scenario'] = commerce_realex_remote_3dsecure_eci_lookup($eci);
   }
-  $xid = !empty($response['xid']) ? $response['xid'] : (!empty($response['threedsecure_xid']) ? $response['threedsecure_xid'] : (!empty($extra['threedsecure_xid']) ? $extra['threedsecure_xid'] : NULL));
+  $xid = !empty($response['xid']) ? $response['xid'] : (!empty($response['threedsecure_xid']) ? $response['threedsecure_xid'] : NULL);
   if (!empty($xid)) {
     $transaction->message .= 'XID: @xid<br />';
     $transaction->message_variables['@xid'] = $xid;
@@ -833,18 +835,26 @@ function commerce_realex_remote_transaction_save($transaction_type, $payment_met
     $transaction->message .= 'Enrolled: @enrolled<br />';
     $transaction->message_variables['@enrolled'] = $enrolled;
   }
-  $cavv = !empty($response['cavv']) ? $response['cavv'] : (!empty($response['threedsecure_cavv']) ? $response['threedsecure_cavv'] : (!empty($extra['threedsecure_cavv']) ? $extra['threedsecure_cavv'] : NULL));
+  $cavv = !empty($response['cavv']) ? $response['cavv'] : (!empty($response['threedsecure_cavv']) ? $response['threedsecure_cavv'] : NULL);
   if (!empty($cavv)) {
     $transaction->message .= 'CAVV: @cavv<br />';
     $transaction->message_variables['@cavv'] = $cavv;
   }
-  if (!empty($extra['threedsecure_status'])) {
+  if (!empty($response['threedsecure_status'])) {
     $transaction->message .= '3D Secure Status: @threedsecure_status<br />';
-    $transaction->message_variables['@threedsecure_status'] = $extra['threedsecure_status'];
+    $transaction->message_variables['@threedsecure_status'] = $response['threedsecure_status'];
   }
   if (!empty($response['log'])) {
+    $transaction->message .= '@response_log<br />';
+    $transaction->message_variables['@response_log'] = $response['log'];
+  }
+  if (!empty($log)) {
     $transaction->message .= '@log<br />';
-    $transaction->message_variables['@log'] = $response['log'];
+    $transaction->message_variables['@log'] = $log;
+  }
+  if (!empty($response['user_message'])) {
+    $transaction->message .= 'Error displayed: @user_message<br />';
+    $transaction->message_variables['@user_message'] = $response['user_message'];
   }
 
   commerce_payment_transaction_save($transaction);
