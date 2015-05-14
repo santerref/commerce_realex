@@ -377,7 +377,7 @@ function commerce_realex_remote_do_auth_request($payment_method, $request, &$ord
   $log = isset($request['log_message']) ? $request['log_message'] : '';
   if (!empty($request['eci'])) {
     $eci_scenario = commerce_realex_remote_3dsecure_eci_lookup($request['eci']);
-    $log = 'ECI sent: ' . $eci_scenario . ' (' . $request['eci'] . ')<br />' . $log;
+    $log = 'ECI sent: ' . $eci_scenario . ' (' . $request['eci'] . ')' . $log;
   }
   $transaction = commerce_realex_remote_transaction_save($type, $payment_method, $order, $response, $log);
   unset($request['log_message']);
