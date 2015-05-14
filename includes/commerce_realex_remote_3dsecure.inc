@@ -197,7 +197,13 @@ function commerce_realex_3dsecure_callback($order) {
     $order->payment_methods = array();
     rules_invoke_all('commerce_payment_methods', $order);
   }
-  $payment_method['settings'] = $order->payment_methods[$method_id . '|commerce_payment_' . $method_id]['settings'];
+  if (!empty($order->payment_methods)) {
+    foreach ($order->payment_methods as $id => $method) {
+      if ($method['method_id'] == $method_id) {
+        $payment_method['settings'] = $method['settings'];
+      }
+    }
+  }
 
   // Update request array.
   $request['pares'] = $_POST['PaRes'];
@@ -277,7 +283,13 @@ function _commerce_realex_process_3dsecure_verifysig_response($response, $reques
     $order->payment_methods = array();
     rules_invoke_all('commerce_payment_methods', $order);
   }
-  $payment_method['settings'] = $order->payment_methods[$method_id . '|commerce_payment_' . $method_id]['settings'];
+  if (!empty($order->payment_methods)) {
+    foreach ($order->payment_methods as $id => $method) {
+      if ($method['method_id'] == $method_id) {
+        $payment_method['settings'] = $method['settings'];
+      }
+    }
+  }
   $require_liability_shift = $payment_method['settings']['3dsecure_require_liability_shift'];
 
   $success = _commerce_realex_remote_verify_response('3ds-verifysig', $request, $response, $order, $payment_method);
