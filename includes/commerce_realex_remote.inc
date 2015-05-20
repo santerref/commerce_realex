@@ -366,7 +366,7 @@ function commerce_realex_remote_do_auth_request($payment_method, $request, &$ord
   // Send the request.
   $type = 'auth';
   $url = $payment_method['settings']['remote_url'];
-  $payment_method['instance_id'] = $order->data['payment_method'];
+  $payment_method['instance_id'] = empty($order->data['payment_method']) ? NULL : $order->data['payment_method'];
   $xml = _commerce_realex_remote_build_xml_request($request, $type);
   $response = _commerce_realex_send_request($url, $xml);
 
