@@ -248,7 +248,7 @@ function commerce_realex_redirect_checkout_complete() {
     $response[$key] = $value;
   }
 
-  if ($response['commerce_order_id']) {
+  if (!empty($response['commerce_order_id'])) {
     $order = commerce_order_load($response['commerce_order_id']);
 
     $instance_id = $order->data['payment_method'];
