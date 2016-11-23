@@ -313,6 +313,7 @@ function commerce_realex_remote_commerce_payment_method_submit_form_submit($paym
   $request['amount'] = $charge['amount'];
   $request['currency'] = $charge['currency_code'];
   $request['ip_address'] = ip_address();
+  $request['ip_address'] = ($request['ip_address'] == '::1') ? '127.0.0.1' : $request['ip_address'];
 
   // Get products purchased.
   $products = array();
@@ -616,6 +617,7 @@ function _commerce_realex_remote_build_xml_request($request, $type) {
  */
 function _commerce_realex_remote_build_xml_request_auth($request) {
   $request['ip_address'] = isset($request['ip_address']) ? $request['ip_address'] : ip_address();
+  $request['ip_address'] = ($request['ip_address'] == '::1') ? '127.0.0.1' : $request['ip_address'];
   $xml = "<request type='auth' timestamp='" . $request['timestamp'] . "'>
     <merchantid>" . $request['merchantid'] . "</merchantid>
     <account>" . $request['account'] . "</account>

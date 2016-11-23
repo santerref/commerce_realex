@@ -123,6 +123,7 @@ return;
   $request['amount'] = $charge['amount'];
   $request['currency'] = $charge['currency_code'];
   $request['ip_address'] = ip_address();
+  $request['ip_address'] = ($request['ip_address'] == '::1') ? '127.0.0.1' : $request['ip_address'];
 
   // Get products purchased.
   $products = array();
