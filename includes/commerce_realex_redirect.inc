@@ -5,6 +5,9 @@
  * Callback methods for Realex Payments Redirect integration.
  */
 
+define('GATEWAY_URL', 'https://hpp.realexpayments.com/pay');
+define('GATEWAY_URL_TEST', 'https://hpp.sandbox.realexpayments.com/pay');
+
 /**
  * Payment method callback: settings form.
  */
@@ -34,6 +37,20 @@ function commerce_realex_redirect_commerce_payment_method_settings_form($setting
     '#size' => 16,
     '#required' => TRUE,
   );
+  
+  $form['gateway_url'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Gateway URL'),
+    '#default_value' => isset($settings['gateway_url']) ? $settings['gateway_url'] : GATEWAY_URL,
+    '#required' => TRUE,
+  );  
+  
+  $form['gateway_url_test'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Gateway Test URL'),
+    '#default_value' => isset($settings['gateway_test_url']) ? $settings['gateway_test_url'] : GATEWAY_URL_TEST,
+    '#required' => TRUE,
+  );    
 
   $form['test_mode'] = array(
     '#type' => 'checkbox',
@@ -204,11 +221,11 @@ function commerce_realex_redirect_redirect_form($form, &$form_state, $order, $pa
   }
 
   // Live url.
-  $form['#action'] = 'https://hpp.realexpayments.com/pay';
+  $form['#action'] = !empty($payment_method['settings']['gateway_url'])?$payment_method['settings']['gateway_url']: GATEWAY_URL;
   // Sandbox
   if (!empty($payment_method['settings']['test_mode'])) {
-    $form['#action'] = 'https://hpp.sandbox.realexpayments.com/pay';
-  }
+    $form['#action'] = !empty($payment_method['settings']['gateway_url'])?$payment_method['settings']['gateway_url_test']: GATEWAY_URL_TEST;
+  }  
 
   foreach ($data as $name => $value) {
     if (!empty($value)) {
