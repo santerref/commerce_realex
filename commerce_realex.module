@@ -210,18 +210,11 @@ function _commerce_realex_build_request_sha1hash($request, $type = 'auth') {
 function _commerce_realex_get_card_type($card, $number) {
   $bin_range = substr($number, 0, 4);
   switch ($card) {
+    case 'maestro':
     case 'mastercard':
       return 'MC';
     case 'amex':
       return 'AMEX';
-    case 'solo':
-    case 'switch':
-      return 'SWITCH';
-    case 'maestro':
-      if ($bin_range == '6703') {
-        return 'MC';
-      }
-      return 'SWITCH';
     case 'laser':
       return 'LASER';
     case 'dc':
@@ -241,8 +234,6 @@ function _commerce_realex_supported_card_types() {
     'visa' => t('Visa'),
     'mastercard' => t('Mastercard'),
     'amex' => t('American Express'),
-    'switch' => t('Switch'),
-    'solo' => t('Solo'),
     'maestro' => t('Maestro'),
     'delta' => t('Delta'),
     'dc' => t("Diner's Club"),

@@ -17,10 +17,8 @@ function _commerce_realex_is_3dsecure_supported_card($card) {
   switch ($card) {
     case 'mastercard':
     case 'visa':
-    case 'switch':
     case 'maestro':
       return TRUE;
-    case 'solo':
     case 'amex':
     case 'laser':
     case 'dc':
