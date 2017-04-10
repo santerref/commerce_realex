@@ -82,9 +82,10 @@ function commerce_realex_remote_do_3dsecure_verify_enrolled_request($payment_met
   // Send the request.
   $type = '3ds-verifyenrolled';
   $url = $payment_method['settings']['3dsecure_remote_url'];
+  $verify_ssl = $payment_method['settings']['verify_ssl'];
   $require_liability_shift = $payment_method['settings']['3dsecure_require_liability_shift'];
   $xml = _commerce_realex_remote_build_xml_request($request, $type);
-  $response = _commerce_realex_send_request($url, $xml);
+  $response = _commerce_realex_send_request($url, $xml, $verify_ssl);
 
   // Verify response.
   $success = _commerce_realex_remote_verify_response($type, $request, $response, $order, $payment_method);
@@ -247,7 +248,8 @@ function commerce_realex_3dsecure_callback($order) {
 
   // Send the request.
   $url = $payment_method['settings']['3dsecure_remote_url'];
-  $response = _commerce_realex_send_request($url, $xml);
+  $verify_ssl = $payment_method['settings']['verify_ssl'];
+  $response = _commerce_realex_send_request($url, $xml, $verify_ssl);
 
   // Add the mpi fields to the request array.
   if (isset($response['threedsecure_eci'])) {

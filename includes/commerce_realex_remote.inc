@@ -44,6 +44,12 @@ function commerce_realex_remote_commerce_payment_method_settings_form($settings 
     '#required' => TRUE,
   );
 
+  $form['verify_ssl'] = array(
+    '#type' => 'checkbox',
+    '#title' => t("Verify Realex's SSL certificate"),
+    '#default_value' => isset($settings['verify_ssl']) ? $settings['verify_ssl'] : TRUE,
+  );
+
   if (module_exists('commerce_3d_secure')) {
     $form['3dsecure'] = array(
       '#type' => 'checkbox',
@@ -367,9 +373,10 @@ function commerce_realex_remote_do_auth_request($payment_method, $request, &$ord
   // Send the request.
   $type = 'auth';
   $url = $payment_method['settings']['remote_url'];
+  $verify_ssl = $payment_method['settings']['verify_ssl'];
   $payment_method['instance_id'] = empty($order->data['payment_method']) ? NULL : $order->data['payment_method'];
   $xml = _commerce_realex_remote_build_xml_request($request, $type);
-  $response = _commerce_realex_send_request($url, $xml);
+  $response = _commerce_realex_send_request($url, $xml, $verify_ssl);
 
   // Verify response.
   $success = _commerce_realex_remote_verify_response($type, $request, $response, $order, $payment_method);
@@ -472,9 +479,10 @@ function commerce_realex_remote_get_dcc_offer($payment_method, $pane_values, &$o
 
   // Send the request.
   $url = $payment_method['settings']['remote_url'];
+  $verify_ssl = $payment_method['settings']['verify_ssl'];
   $type = 'dccrate';
   $xml = _commerce_realex_remote_build_xml_request($request, $type);
-  $response = _commerce_realex_send_request($url, $xml);
+  $response = _commerce_realex_send_request($url, $xml, $verify_ssl);
 
   // Verify response.
   $success = _commerce_realex_remote_verify_response($type, $request, $response, $order, $payment_method);
