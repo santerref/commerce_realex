@@ -395,6 +395,7 @@ function commerce_realex_redirect_transaction_save($payment_method, $order, $res
   }
 
   // Log the response variables.
+  $logged_vars = array('result', 'message', 'order_id', 'timestamp', 'form_build_id', 'form_token');
   $transaction->message = 'Status @resultcode, @message.<br />Order ID: @orderid,<br />Timestamp: @timestamp<br />';
   $transaction->message_variables = array(
     '@resultcode' => isset($response['result']) ? $response['result'] : '',
@@ -405,47 +406,71 @@ function commerce_realex_redirect_transaction_save($payment_method, $order, $res
   if (!empty($response['authcode'])) {
     $transaction->message .= 'Auth code: @authcode<br />';
     $transaction->message_variables['@authcode'] = $response['authcode'];
+    $logged_vars[] = 'authcode';
   }
   if (!empty($response['pasref'])) {
     $transaction->message .= 'Pasref: @pasref<br />';
     $transaction->message_variables['@pasref'] = $response['pasref'];
+    $logged_vars[] = 'pasref';
   }
   if (!empty($response['avsaddressresult'])) {
     $transaction->message .= 'Address check: @address<br />';
     $transaction->message_variables['@address'] = $response['avsaddressresult'];
+    $logged_vars[] = 'avsaddressresult';
   }
   if (!empty($response['avspostcoderesult'])) {
     $transaction->message .= 'Postcode check: @postcode<br />';
     $transaction->message_variables['@postcode'] = $response['avspostcoderesult'];
+    $logged_vars[] = 'avspostcoderesult';
   }
   if (!empty($response['cvnresult'])) {
     $transaction->message .= 'CVN result: @cvn<br />';
     $transaction->message_variables['@cvn'] = $response['cvnresult'];
+    $logged_vars[] = 'cvnresult';
   }
   if (!empty($response['batchid'])) {
     $transaction->message .= 'Batch Id: @batchid<br />';
     $transaction->message_variables['@batchid'] = $response['batchid'];
+    $logged_vars[] = 'batchid';
   }
   if (!empty($response['tss'])) {
     $transaction->message .= 'Transaction suitability score: @tss<br />';
     $transaction->message_variables['@tss'] = $response['tss'];
+    $logged_vars[] = 'tss';
   }
   if (!empty($response['log'])) {
     $transaction->message .= '@log<br />';
     $transaction->message_variables['@log'] = $response['log'];
+    $logged_vars[] = 'log';
   }
   if (!empty($response['eci'])) {
     $transaction->message .= 'ECI: @eci_scenario (@eci)<br />';
     $transaction->message_variables['@eci'] = $response['eci'];
     $transaction->message_variables['@eci_scenario'] = commerce_realex_redirect_3dsecure_eci_lookup($response['eci']);
+    $logged_vars[] = 'eci';
+    $logged_vars[] = 'eci_scenario';
   }
   if (!empty($response['xid'])) {
     $transaction->message .= 'XID: @xid<br />';
     $transaction->message_variables['@xid'] = $response['xid'];
+    $logged_vars[] = 'xid';
   }
   if (!empty($response['caav'])) {
     $transaction->message .= 'CAAV: @caav<br />';
     $transaction->message_variables['@caav'] = $response['caav'];
+    $logged_vars[] = 'caav';
+  }
+
+  // For remaining variables, just add them as key/value pairs to the log.
+  $i = 0;
+  foreach ($response as $key => $value) {
+    if (!in_array($key, $logged_vars)) {
+      $transaction->message .= "@key$i: @value$i<br />";
+      $transaction->message_variables["@key$i"] = $key;
+      $transaction->message_variables["@value$i"] = $value;
+      $logged_vars[] = $key;
+      $i++;
+    }
   }
 
   commerce_payment_transaction_save($transaction);
