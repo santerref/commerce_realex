@@ -220,6 +220,11 @@ function commerce_realex_redirect_redirect_form($form, &$form_state, $order, $pa
     $data['SHIPPING_CODE'] = $zip_postal_code;
   }
 
+  // Allow other modules to modify the data - useful if they want to change the
+  // response url or add additional data to the request (to be returned in the
+  // response).
+  drupal_alter('commerce_realex_redirect_data', $data, $order);
+
   // Live url.
   $form['#action'] = !empty($payment_method['settings']['gateway_url'])?$payment_method['settings']['gateway_url']: GATEWAY_URL;
   // Sandbox
