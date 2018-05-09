@@ -473,6 +473,8 @@ function commerce_realex_redirect_transaction_save($payment_method, $order, $res
     }
   }
 
+  $transaction->payload = $response;
+
   commerce_payment_transaction_save($transaction);
 
   return $transaction;
