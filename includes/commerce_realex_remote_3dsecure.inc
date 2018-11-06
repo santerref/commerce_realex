@@ -105,12 +105,13 @@ function commerce_realex_remote_do_3dsecure_verify_enrolled_request($payment_met
   if ($success) {
     // Create a $md variable which is a string of useful information that will be mirrored in the 3d process.
     $md = 'payment_method_id=' . $payment_method['method_id'] . '&orderid=' . $response['orderid'] . '&ccnumber=' . $request['ccnumber'] . '&chname=' . $request['chname'] . '&cctype=' . $request['cctype'] . '&issueno=' . $request['issueno'] . '&currency=' . $request['currency'] . '&amount=' . $request['amount'] . '&expiry_date=' . $request['expiry_date'];
+
     $key = 'realex' . $response['pareq'] . 'commerce';
-    if (function_exists('mcrypt_encrypt')) {
-      $md = base64_encode(mcrypt_encrypt(MCRYPT_RIJNDAEL_256, md5($key), $md, MCRYPT_MODE_CBC, md5(md5($key))));
-    }
-    else {
-      $md = base64_encode(mcrypt_cbc(MCRYPT_RIJNDAEL_256, md5($key), $md, MCRYPT_ENCRYPT, md5(md5($key))));
+    $cipher = "aes-128-cbc";
+    if (in_array($cipher, openssl_get_cipher_methods()))
+    {
+      $iv = '';
+      $md = base64_encode(openssl_encrypt($md, $cipher, $key, $options=0, $iv));
     }
 
     // Save the data to process the 3D Secure response.
@@ -176,11 +177,11 @@ function commerce_realex_3dsecure_callback($order) {
 
   $md = $_POST['MD'];
   $key = 'realex' . $order->data['extra_authorisation']['PAReq'] . 'commerce';
-  if (function_exists('mcrypt_decrypt')) {
-    $md = rtrim(mcrypt_decrypt(MCRYPT_RIJNDAEL_256, md5($key), base64_decode($md), MCRYPT_MODE_CBC, md5(md5($key))), "\0");
-  }
-  else {
-    $md = rtrim(mcrypt_cbc(MCRYPT_RIJNDAEL_256, md5($key), base64_decode($md), MCRYPT_DECRYPT, md5(md5($key))), "\0");
+  $cipher = "aes-128-cbc";
+  if (in_array($cipher, openssl_get_cipher_methods()))
+  {
+    $iv = '';
+    $md = openssl_decrypt(base64_decode($md), $cipher, $key, $options=0, $iv);
   }
 
   // The MD POST variable makes the foundation for our $request for 3ds-verifysig.
@@ -451,5 +452,3 @@ function commerce_realex_remote_3dsecure_eci_lookup($eci) {
   }
   return $scenario;
 }
-
-
