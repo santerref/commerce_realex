@@ -1,0 +1,7 @@
+name: Commerce Realex Payments
+type: module
+description: Realex Payments integration with Drupal Commerce
+core: 8.x
+package: Commerce (contrib)
+dependencies:
+  - commerce:commerce_payment

@@ -1,0 +1,45 @@
+{
+    "name": "drupal/commerce_realex",
+    "description": "Commerce Realex Payments.",
+    "type": "drupal-module",
+    "homepage": "https://drupal.org/project/commerce_realex",
+    "authors": [
+        {
+            "name": "Stella Power (stella)",
+            "homepage": "https://www.drupal.org/u/stella",
+            "role": "Maintainer"
+        }
+    ],
+    "support": {
+        "issues": "https://drupal.org/project/issues/commerce_realex",
+        "irc": "irc://irc.freenode.org/drupal-contribute",
+        "source": "https://cgit.drupalcode.org/commerce_realex"
+    },
+    "license": "GPL-2.0-or-later",
+    "minimum-stability": "dev",
+    "repositories": {
+        "realexpayments/rxp-js": {
+            "type": "package",
+            "package": {
+                "name": "realexpayments/rxp-js",
+                "version": "1.2.1",
+                "type": "drupal-library",
+                "dist": {
+                    "url": "https://github.com/realexpayments/rxp-js/archive/v1.2.1.zip",
+                    "type": "zip"
+                },
+                "require": {
+                    "composer/installers": "~1.0"
+                }
+            }
+        },
+        "realexpayments/rxp-hpp-php": {
+            "type": "vcs",
+            "url": "https://github.com/Annertech/rxp-hpp-php"
+        }
+    },
+    "require": {
+        "realexpayments/rxp-hpp-php": "1.1.6",
+        "realexpayments/rxp-js": "1.2.1"
+    }
+}
