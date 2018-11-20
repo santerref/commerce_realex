@@ -52,7 +52,7 @@ class RealexHppRequest extends ControllerBase {
       ->addAccount($realex_config['realex_account'])
       ->addAmount($this->payableItem->getPayableAmount())  // This is cents not Euros.
       ->addSupplementaryData($supplementary_data)
-      ->addCurrency("EUR") // @todo - Remove Hardcoded EUR.
+      ->addCurrency($this->payableItem->getValue('payable_currency'))
       ->addOrderId($this->payableItemId) // This is the Temp Payable ID.
       ->addCommentOne($this->payableItem->getValue('commerce_order_id'))
       ->addCustomerNumber($this->payableItem->getValue('payable_uid')) // User's ID

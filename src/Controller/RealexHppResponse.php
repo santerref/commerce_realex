@@ -86,9 +86,9 @@ class RealexHppResponse extends ControllerBase {
 
       // Display a message.
       // @todo - Allow user to override this.
-      $payment_amount_formatted = sprintf('%0.2f', $this->payableItem->getValue('payable_amount'));
-      $message = $this->t('Thank you for your payment of €@payment_amount.',
-                          ['@payment_amount' => $payment_amount_formatted]);
+      $currency_formatter = \Drupal::service('commerce_price.currency_formatter');
+      $payment_amount_formatted = $currency_formatter->format($this->payableItem->getValue('payable_amount'), $this->payableItem->getValue('payable_currency'));
+      $message = $this->t('Thank you for your payment of @payment_amount.', ['@payment_amount' => $payment_amount_formatted]);
       drupal_set_message($message);
 
       // Update PayableItem in tempstore.

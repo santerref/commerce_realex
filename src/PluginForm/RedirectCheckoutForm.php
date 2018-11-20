@@ -19,12 +19,18 @@ class RedirectCheckoutForm extends PaymentOffsiteForm {
 		$order = $payment->getOrder();
 		$profile = $order->getBillingProfile();
 		$address =  $order->getBillingProfile()->get('address')->first();
+    $entity_type_manager = \Drupal::service('entity_type.manager');
+    $currency_code = $payment->getAmount()->getCurrencyCode();
+    $currency = $entity_type_manager->getStorage('commerce_currency')->load($currency_code);
+    $currency_symbol =  $currency->getSymbol();
 
     $plugin = $payment->getPaymentGateway()->getPlugin();
 
     $payable = new PayableItem();
     // Setup Custom Values on the Payable.
     $payable->setValue('payable_amount', $payment->getAmount()->getNumber());
+    $payable->setValue('payable_currency', $currency_code);
+    $payable->setValue('payable_currency_symbol', $currency_symbol);
     $payable->setValue('given_name', $address->getGivenName());
     $payable->setValue('family_name', $address->getFamilyName());
 		$payable->setValue('commerce_order_id', $order->id());

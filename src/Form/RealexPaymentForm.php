@@ -60,9 +60,10 @@ class RealexPaymentForm extends FormBase {
     $realex_config = $payable['realex_config'];
 
     // Display a summary of what is being paid for.
+    $currency_formatter = \Drupal::service('commerce_price.currency_formatter');
     $form_fields['summary'] = [
       '#type' => 'item',
-      '#markup' => '(€' . sprintf('%0.2f', $payable['payable_amount']) . ')',
+      '#markup' => $currency_formatter->format($payable['payable_amount'], $payable['payable_currency']),
       '#title' => $this->t('Summary:')
     ];
     $pay_button_id = Html::getUniqueId('realex-pay-button');
