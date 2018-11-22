@@ -39,7 +39,7 @@
         }
     },
     "require": {
-        "realexpayments/rxp-hpp-php": "dev-master as 1.1.6",
+        "realexpayments/rxp-hpp-php": "dev-master",
         "realexpayments/rxp-js": "1.2.1"
     }
 }
