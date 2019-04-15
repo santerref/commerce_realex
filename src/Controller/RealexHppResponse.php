@@ -59,7 +59,7 @@ class RealexHppResponse extends ControllerBase {
     try {
       $this->hppResponse = $realexHpp->responseFromJson($responseJson);
       $result = $this->hppResponse->getResult(); // 00
-      $message = $this->hppResponse->getMessage(); // [ test system ] Authorised
+      $realex_message = $this->hppResponse->getMessage(); // [ test system ] Authorised
       $authCode = $this->hppResponse->getAuthCode(); // 12345
       $pasRef  = $this->hppResponse->getPasRef(); // 12345
       $supplementary_data = $this->hppResponse->getSupplementaryData();
@@ -88,14 +88,16 @@ class RealexHppResponse extends ControllerBase {
       // @todo - Allow user to override this.
       $currency_formatter = \Drupal::service('commerce_price.currency_formatter');
       $payment_amount_formatted = $currency_formatter->format($this->payableItem->getValue('payable_amount'), $this->payableItem->getValue('payable_currency'));
-      $message = $this->t('Thank you for your payment of @payment_amount.', ['@payment_amount' => $payment_amount_formatted]);
-      drupal_set_message($message);
+      $display_message = $this->t('Thank you for your payment of @payment_amount.', ['@payment_amount' => $payment_amount_formatted]);
+      drupal_set_message($display_message);
 
       // Update PayableItem in tempstore.
       $this->payableItem->setValue('payment_complete', TRUE);
+      $this->payableItem->setValue('authCode', $authCode);
+      $this->payableItem->setValue('message', $realex_message);
       $this->payableItem->saveTempStore($this->payableItemId);
 
-      // Redirect the user to the "Successfull Payment" callback.
+      // Redirect the user to the "Successful Payment" callback.
 			$success_callback = 'commerce_payment.checkout.return';
 			return $this->redirect($success_callback,
 				[

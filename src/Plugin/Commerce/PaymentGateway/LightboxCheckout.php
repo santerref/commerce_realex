@@ -107,7 +107,7 @@ class LightboxCheckout extends OffsitePaymentGatewayBase {
       'amount' => $order->getTotalPrice(),
       'payment_gateway' => $this->entityId,
       'order_id' => $order->id(),
-      'remote_id' => $request->request->get('remote_id'),
+      'remote_id' => $this->payableItem->getValue('authCode'),
       'remote_state' => $request->request->get('remote_state'),
     ]);
 
