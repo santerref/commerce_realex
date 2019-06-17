@@ -13,7 +13,7 @@ function commerce_realex_remote_commerce_payment_method_settings_form($settings 
 
   $form['merchant_id'] = array(
     '#type' => 'textfield',
-    '#title' => t('Realex Payments Merchant ID'),
+    '#title' => t('Global Payments Merchant ID'),
     '#default_value' => isset($settings['merchant_id']) ? $settings['merchant_id'] : '',
     '#size' => 16,
     '#required' => TRUE,
@@ -21,7 +21,7 @@ function commerce_realex_remote_commerce_payment_method_settings_form($settings 
 
   $form['account_id'] = array(
     '#type' => 'textfield',
-    '#title' => t('Realex Payments Account ID'),
+    '#title' => t('Global Payments Account ID'),
     '#default_value' => isset($settings['account_id']) ? $settings['account_id'] : '',
     '#size' => 16,
     '#required' => FALSE,
@@ -37,8 +37,8 @@ function commerce_realex_remote_commerce_payment_method_settings_form($settings 
 
   $form['remote_url'] = array(
     '#type' => 'textfield',
-    '#title' => t('Realex Payments Remote XML URL'),
-    '#description' => t('The Realex Payments URL to submit the order to.'),
+    '#title' => t('Global Payments Remote XML URL'),
+    '#description' => t('The Global Payments URL to submit the order to.'),
     '#default_value' => isset($settings['remote_url']) ?  $settings['remote_url'] : 'https://epage.payandshop.com/epage-remote.cgi',
     '#size' => 50,
     '#required' => TRUE,
@@ -46,7 +46,7 @@ function commerce_realex_remote_commerce_payment_method_settings_form($settings 
 
   $form['verify_ssl'] = array(
     '#type' => 'checkbox',
-    '#title' => t("Verify Realex's SSL certificate"),
+    '#title' => t("Verify Global's SSL certificate"),
     '#default_value' => isset($settings['verify_ssl']) ? $settings['verify_ssl'] : TRUE,
   );
 
@@ -59,8 +59,8 @@ function commerce_realex_remote_commerce_payment_method_settings_form($settings 
 
     $form['3dsecure_remote_url'] = array(
       '#type' => 'textfield',
-      '#title' => t('Realex Payments 3D Secure XML URL'),
-      '#description' => t('The Realex Payments URL to submit the order to.'),
+      '#title' => t('Global Payments 3D Secure XML URL'),
+      '#description' => t('The Global Payments URL to submit the order to.'),
       '#default_value' => isset($settings['3dsecure_remote_url']) ? $settings['3dsecure_remote_url'] : 'https://epage.payandshop.com/epage-3dsecure.cgi',
       '#size' => 50,
       '#required' => TRUE,
@@ -89,7 +89,7 @@ function commerce_realex_remote_commerce_payment_method_settings_form($settings 
       '#title' => t('Use 3D Secure'),
       '#default_value' => 0,
       '#attributes' => array('disabled' => 'disabled'),
-      '#description' => t('Enable the Commerce 3D Secure module if you wish to enable 3D Secure transactions for Realex Payments.'),
+      '#description' => t('Enable the Commerce 3D Secure module if you wish to enable 3D Secure transactions for Global Payments.'),
     );
   }
 
@@ -144,7 +144,7 @@ function commerce_realex_remote_commerce_payment_method_settings_form($settings 
 
   $form['cctype_accounts'] = array(
     '#type' => 'fieldset',
-    '#title' => t('Realex Payments card type account settings'),
+    '#title' => t('Global Payments card type account settings'),
     '#collapsible' => TRUE,
     '#collapsed' => FALSE,
     '#states' => array(

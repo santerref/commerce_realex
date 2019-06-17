@@ -46,7 +46,7 @@ function commerce_realex_page_build(&$page) {
   if (preg_match('/^checkout\/(\d+)\/checkout/', $current_path, $matches)) {
     $order_id = $matches[1];
     $order = commerce_order_load($order_id);
-    if (preg_match('/^Realex Payments Redirect:\s+(.+)/', $order->log, $message)) {
+    if (preg_match('/^Global Payments Redirect:\s+(.+)/', $order->log, $message)) {
       drupal_set_message($message[1], 'warning');
       $order->revision = TRUE;
       $order->log = '';
@@ -62,10 +62,10 @@ function commerce_realex_commerce_payment_method_info() {
   $payment_methods = array();
 
   $payment_methods['commerce_realex_remote'] = array(
-    'title' => t('Realex Payments Remote'),
-    'short_title' => t('Realex Payments Remote'),
+    'title' => t('Global Payments Remote'),
+    'short_title' => t('Global Payments Remote'),
     'display_title' => t('Pay by Credit or Debit Card'),
-    'description' => t('Integration with Realex Payments using Remote API method.'),
+    'description' => t('Integration with Global Payments using Remote API method.'),
     'active' => TRUE,
     'callbacks' => array(
       'settings_form' => 'commerce_realex_remote_commerce_payment_method_settings_form',
@@ -78,10 +78,10 @@ function commerce_realex_commerce_payment_method_info() {
 
   $payment_methods['commerce_realex_redirect'] = array(
     'base' => 'commerce_realex_redirect',
-    'title' => t('Realex Payments Redirect'),
-    'short_title' => t('Realex Payments Redirect'),
+    'title' => t('Global Payments Redirect'),
+    'short_title' => t('Global Payments Redirect'),
     'display_title' => t('Pay by Credit or Debit Card'),
-    'description' => t('Integration with Realex Payments using the Redirect method.'),
+    'description' => t('Integration with Global Payments using the Redirect method.'),
     'terminal' => FALSE,
     'offsite' => TRUE,
     'offsite_autoredirect' => TRUE,
@@ -256,7 +256,7 @@ function _commerce_realex_get_module_versions() {
   $commerce_realex_info = drupal_parse_info_file($commerce_realex_info_file);
   $commerce_realex_version = empty($commerce_realex_info['version']) ? 'Unknown ' . $commerce_realex_info['core'] : $commerce_realex_info['version'];
 
-  return 'Drupal Commerce ' . $commerce_version . ' | Commerce Realex ' . $commerce_realex_version;
+  return 'Drupal Commerce ' . $commerce_version . ' | Commerce Global Payments ' . $commerce_realex_version;
 }
 
 

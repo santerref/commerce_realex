@@ -16,7 +16,7 @@ function commerce_realex_redirect_commerce_payment_method_settings_form($setting
 
   $form['merchant_id'] = array(
     '#type' => 'textfield',
-    '#title' => t('Realex Payments Merchant ID'),
+    '#title' => t('Global Payments Merchant ID'),
     '#default_value' => isset($settings['merchant_id']) ? $settings['merchant_id'] : '',
     '#size' => 16,
     '#required' => TRUE,
@@ -24,7 +24,7 @@ function commerce_realex_redirect_commerce_payment_method_settings_form($setting
 
   $form['account_id'] = array(
     '#type' => 'textfield',
-    '#title' => t('Realex Payments Account ID'),
+    '#title' => t('Global Payments Account ID'),
     '#default_value' => isset($settings['account_id']) ?  $settings['account_id'] : '',
     '#size' => 16,
     '#required' => TRUE,
@@ -55,7 +55,7 @@ function commerce_realex_redirect_commerce_payment_method_settings_form($setting
   $form['test_mode'] = array(
     '#type' => 'checkbox',
     '#title' => t('Enable test mode'),
-    '#description' => t('If enabled, the transactions go to a sandbox Realex Payments server.'),
+    '#description' => t('If enabled, the transactions go to a sandbox Global Payments server.'),
     '#default_value' => isset($settings['test_mode']) ? $settings['test_mode'] : 0,
   );
 
@@ -63,7 +63,7 @@ function commerce_realex_redirect_commerce_payment_method_settings_form($setting
     '#type' => 'textfield',
     '#title' => t('Referring URL'),
     '#description' => t('The absolute url to the page on your site from which
-    the Realex Payments gateway will be referred by. You will need to give this url to Realex Payments when they set up your account.'),
+    the Global Payments gateway will be referred by. You will need to give this url to Global Payments when they set up your account.'),
     '#default_value' => isset($settings['redirect_referring_url']) ? $settings['redirect_referring_url'] : url('checkout/', array('absolute' => TRUE)) . '(.*)',
     '#required' => TRUE,
     '#disabled' => TRUE,
@@ -96,7 +96,7 @@ function commerce_realex_redirect_commerce_payment_method_settings_form($setting
  */
 function commerce_realex_redirect_commerce_payment_method_submit_form($payment_method, $pane_values, $checkout_pane, $order) {
   $form['commmerce_realex_redirect_markup'] = array(
-    '#markup' => '<span class="commerce-realex-redirect-information">' . t('You will be redirected to the Realex Payments Hosted Payment Page to complete your order.') . '</span>',
+    '#markup' => '<span class="commerce-realex-redirect-information">' . t('You will be redirected to the Global Payments Hosted Payment Page to complete your order.') . '</span>',
   );
 
   return $form;
@@ -109,7 +109,7 @@ function commerce_realex_redirect_commerce_payment_method_submit_form($payment_m
 function commerce_realex_redirect_redirect_form($form, &$form_state, $order, $payment_method) {
   // Return an error if the enabling action's settings haven't been configured.
   if (empty($payment_method['settings']['merchant_id'])) {
-    drupal_set_message(t('Realex Payments is not configured for use. No Realex Payments merchant ID has been specified.'), 'error');
+    drupal_set_message(t('Global Payments is not configured for use. No Global Payments merchant ID has been specified.'), 'error');
     return array();
   }
 
@@ -178,7 +178,13 @@ function commerce_realex_redirect_redirect_form($form, &$form_state, $order, $pa
       $data['COMMENT1'] = substr($data['COMMENT1'], 0, 252) . '...';
     }
   }
-  $data['COMMENT2'] = _commerce_realex_get_module_versions();
+//  $data['COMMENT2'] = _commerce_realex_get_module_versions();
+	
+	$additionalHppData = array(
+		"HPP_VERSION"        => 2,
+		"HPP_CUSTOMER_EMAIL" => isset($order->mail) ? $order->mail : '',
+		"COMMENT1"           => 'drupalcommerce7'
+	);
 
   // Load the customer billing profile for the order.
   if (!empty($order->commerce_customer_billing)) {
@@ -198,6 +204,36 @@ function commerce_realex_redirect_redirect_form($form, &$form_state, $order, $pa
 
     $data['BILLING_CO'] = $country;
     $data['BILLING_CODE'] = $zip_postal_code;
+	
+    $hppBillingState = '';
+	  
+	  if (!empty($country) && in_array($address['country'], array('US', 'CA'))) {
+		  if (isset($address['administrative_area']) && !empty($address['administrative_area'])) {
+			  $hppBillingState = $address['administrative_area'];
+		  }
+	  }
+	
+	  $hppBillingFields    = array(
+		  "HPP_BILLING_STREET1"    => $street_one,
+		  "HPP_BILLING_STREET2"    => '',
+		  "HPP_BILLING_STREET3"    => '',
+		  "HPP_BILLING_CITY"       => isset($address['locality']) ? $address['locality'] : '',
+		  "HPP_BILLING_STATE"      => $hppBillingState,
+		  "HPP_BILLING_POSTALCODE" => $zip_numbers,
+		  "HPP_BILLING_COUNTRY"    => !empty($country) ? commerce_gp_get_country_numeric_code($country) : '',
+	  );
+	  $additionalHppData[] = $hppBillingFields;
+  } else {
+	  // don't think you can have orders without billing details, but let's stay on the safe side
+	  $hppBillingFields    = array(
+		  "HPP_BILLING_STREET1"    => '',
+		  "HPP_BILLING_STREET2"    => '',
+		  "HPP_BILLING_STREET3"    => '',
+		  "HPP_BILLING_CITY"       => '',
+		  "HPP_BILLING_STATE"      => '',
+		  "HPP_BILLING_POSTALCODE" => '',
+		  "HPP_BILLING_COUNTRY"    => '',
+	  );
   }
 
   // Load the customer shipping profile for the order.
@@ -218,9 +254,56 @@ function commerce_realex_redirect_redirect_form($form, &$form_state, $order, $pa
 
     $data['SHIPPING_CO'] = $country;
     $data['SHIPPING_CODE'] = $zip_postal_code;
+	
+	  $hppShippingState = '';
+	
+	  if (!empty($country) && in_array($address['country'], array('US', 'CA'))) {
+		  if (isset($address['administrative_area']) && !empty($address['administrative_area'])) {
+			  $hppShippingState = $address['administrative_area'];
+		  }
+	  }
+	
+	  $hppShippingFields = array(
+		  "HPP_SHIPPING_STREET1"    => $street_one,
+		  "HPP_SHIPPING_STREET2"    => '',
+		  "HPP_SHIPPING_STREET3"    => '',
+		  "HPP_SHIPPING_CITY"       => isset($address['locality']) ? $address['locality'] : '',
+		  "HPP_SHIPPING_STATE"      => $hppShippingState,
+		  "HPP_SHIPPING_POSTALCODE" => $zip_numbers,
+		  "HPP_SHIPPING_COUNTRY"    => !empty($country) ? commerce_gp_get_country_numeric_code($country) : '',
+	  );
+  } else {
+	  $hppShippingFields = array(
+		  "HPP_SHIPPING_STREET1"    => '',
+		  "HPP_SHIPPING_STREET2"    => '',
+		  "HPP_SHIPPING_STREET3"    => '',
+		  "HPP_SHIPPING_CITY"       => '',
+		  "HPP_SHIPPING_STATE"      => '',
+		  "HPP_SHIPPING_POSTALCODE" => '',
+		  "HPP_SHIPPING_COUNTRY"    => '',
+	  );
   }
-
-  // Allow other modules to modify the data - useful if they want to change the
+	
+	// order and type matter
+	if (array_values($hppBillingFields) === array_values($hppShippingFields)) {
+		$additionalHppData["HPP_ADDRESS_MATCH_INDICATOR"] = "TRUE";
+		$additionalHppData[]                              = $hppShippingFields;
+	} else {
+		$additionalHppData["HPP_ADDRESS_MATCH_INDICATOR"] = "FALSE";
+		$additionalHppData[]                              = $hppShippingFields;
+	}
+	
+	foreach ($additionalHppData as $additionalHppProp => $additionalHppValue) {
+		if (is_array($additionalHppValue)) {
+			foreach ($additionalHppValue as $additionalHppPropChild => $additionalHppValueChild) {
+				$data[$additionalHppPropChild] = $additionalHppValueChild;
+			}
+		} else {
+			$data[$additionalHppProp] = $additionalHppValue;
+		}
+	}
+	
+	// Allow other modules to modify the data - useful if they want to change the
   // response url or add additional data to the request (to be returned in the
   // response).
   drupal_alter('commerce_realex_redirect_data', $data, $order);
@@ -240,10 +323,516 @@ function commerce_realex_redirect_redirect_form($form, &$form_state, $order, $pa
 
   $form['submit'] = array(
     '#type' => 'submit',
-    '#value' => t('Proceed to Realex Payments'),
+    '#value' => t('Proceed to Global Payments'),
   );
 
   return $form;
+}
+
+
+/**
+ * @return array
+ */
+function commerce_gp_get_country_numeric_codes()
+{
+	return array(
+		'AF' => '004',
+		'AX' => '248',
+		'AL' => '008',
+		'DZ' => '012',
+		'AS' => '016',
+		'AD' => '020',
+		'AO' => '024',
+		'AI' => '660',
+		'AQ' => '010',
+		'AG' => '028',
+		'AR' => '032',
+		'AM' => '051',
+		'AW' => '533',
+		'AU' => '036',
+		'AT' => '040',
+		'AZ' => '031',
+		'BS' => '044',
+		'BH' => '048',
+		'BD' => '050',
+		'BB' => '052',
+		'BY' => '112',
+		'BE' => '056',
+		'BZ' => '084',
+		'BJ' => '204',
+		'BM' => '060',
+		'BT' => '064',
+		'BO' => '068',
+		'BQ' => '535',
+		'BA' => '070',
+		'BW' => '072',
+		'BV' => '074',
+		'BR' => '076',
+		'IO' => '086',
+		'BN' => '096',
+		'BG' => '100',
+		'BF' => '854',
+		'BI' => '108',
+		'CV' => '132',
+		'KH' => '116',
+		'CM' => '120',
+		'CA' => '124',
+		'KY' => '136',
+		'CF' => '140',
+		'TD' => '148',
+		'CL' => '152',
+		'CN' => '156',
+		'CX' => '162',
+		'CC' => '166',
+		'CO' => '170',
+		'KM' => '174',
+		'CG' => '178',
+		'CD' => '180',
+		'CK' => '184',
+		'CR' => '188',
+		'CI' => '384',
+		'HR' => '191',
+		'CU' => '192',
+		'CW' => '531',
+		'CY' => '196',
+		'CZ' => '203',
+		'DK' => '208',
+		'DJ' => '262',
+		'DM' => '212',
+		'DO' => '214',
+		'EC' => '218',
+		'EG' => '818',
+		'SV' => '222',
+		'GQ' => '226',
+		'ER' => '232',
+		'EE' => '233',
+		'ET' => '231',
+		'SZ' => '748',
+		'FK' => '238',
+		'FO' => '234',
+		'FJ' => '242',
+		'FI' => '246',
+		'FR' => '250',
+		'GF' => '254',
+		'PF' => '258',
+		'TF' => '260',
+		'GA' => '266',
+		'GM' => '270',
+		'GE' => '268',
+		'DE' => '276',
+		'GH' => '288',
+		'GI' => '292',
+		'GR' => '300',
+		'GL' => '304',
+		'GD' => '308',
+		'GP' => '312',
+		'GU' => '316',
+		'GT' => '320',
+		'GG' => '831',
+		'GN' => '324',
+		'GW' => '624',
+		'GY' => '328',
+		'HT' => '332',
+		'HM' => '334',
+		'VA' => '336',
+		'HN' => '340',
+		'HK' => '344',
+		'HU' => '348',
+		'IS' => '352',
+		'IN' => '356',
+		'ID' => '360',
+		'IR' => '364',
+		'IQ' => '368',
+		'IE' => '372',
+		'IM' => '833',
+		'IL' => '376',
+		'IT' => '380',
+		'JM' => '388',
+		'JP' => '392',
+		'JE' => '832',
+		'JO' => '400',
+		'KZ' => '398',
+		'KE' => '404',
+		'KI' => '296',
+		'KP' => '408',
+		'KR' => '410',
+		'KW' => '414',
+		'KG' => '417',
+		'LA' => '418',
+		'LV' => '428',
+		'LB' => '422',
+		'LS' => '426',
+		'LR' => '430',
+		'LY' => '434',
+		'LI' => '438',
+		'LT' => '440',
+		'LU' => '442',
+		'MO' => '446',
+		'MK' => '807',
+		'MG' => '450',
+		'MW' => '454',
+		'MY' => '458',
+		'MV' => '462',
+		'ML' => '466',
+		'MT' => '470',
+		'MH' => '584',
+		'MQ' => '474',
+		'MR' => '478',
+		'MU' => '480',
+		'YT' => '175',
+		'MX' => '484',
+		'FM' => '583',
+		'MD' => '498',
+		'MC' => '492',
+		'MN' => '496',
+		'ME' => '499',
+		'MS' => '500',
+		'MA' => '504',
+		'MZ' => '508',
+		'MM' => '104',
+		'NA' => '516',
+		'NR' => '520',
+		'NP' => '524',
+		'NL' => '528',
+		'NC' => '540',
+		'NZ' => '554',
+		'NI' => '558',
+		'NE' => '562',
+		'NG' => '566',
+		'NU' => '570',
+		'NF' => '574',
+		'MP' => '580',
+		'NO' => '578',
+		'OM' => '512',
+		'PK' => '586',
+		'PW' => '585',
+		'PS' => '275',
+		'PA' => '591',
+		'PG' => '598',
+		'PY' => '600',
+		'PE' => '604',
+		'PH' => '608',
+		'PN' => '612',
+		'PL' => '616',
+		'PT' => '620',
+		'PR' => '630',
+		'QA' => '634',
+		'RE' => '638',
+		'RO' => '642',
+		'RU' => '643',
+		'RW' => '646',
+		'BL' => '652',
+		'SH' => '654',
+		'KN' => '659',
+		'LC' => '662',
+		'MF' => '663',
+		'PM' => '666',
+		'VC' => '670',
+		'WS' => '882',
+		'SM' => '674',
+		'ST' => '678',
+		'SA' => '682',
+		'SN' => '686',
+		'RS' => '688',
+		'SC' => '690',
+		'SL' => '694',
+		'SG' => '702',
+		'SX' => '534',
+		'SK' => '703',
+		'SI' => '705',
+		'SB' => '090',
+		'SO' => '706',
+		'ZA' => '710',
+		'GS' => '239',
+		'SS' => '728',
+		'ES' => '724',
+		'LK' => '144',
+		'SD' => '729',
+		'SR' => '740',
+		'SJ' => '744',
+		'SE' => '752',
+		'CH' => '756',
+		'SY' => '760',
+		'TW' => '158',
+		'TJ' => '762',
+		'TZ' => '834',
+		'TH' => '764',
+		'TL' => '626',
+		'TG' => '768',
+		'TK' => '772',
+		'TO' => '776',
+		'TT' => '780',
+		'TN' => '788',
+		'TR' => '792',
+		'TM' => '795',
+		'TC' => '796',
+		'TV' => '798',
+		'UG' => '800',
+		'UA' => '804',
+		'AE' => '784',
+		'GB' => '826',
+		'US' => '840',
+		'UM' => '581',
+		'UY' => '858',
+		'UZ' => '860',
+		'VU' => '548',
+		'VE' => '862',
+		'VN' => '704',
+		'VG' => '092',
+		'VI' => '850',
+		'WF' => '876',
+		'EH' => '732',
+		'YE' => '887',
+		'ZM' => '894',
+		'ZW' => '716',
+	);
+}
+
+function commerce_gp_get_country_phone_codes() {
+	return array (
+		'AD' => '376',
+		'AE' => '971',
+		'AF' => '93',
+		'AG' => '1268',
+		'AI' => '1264',
+		'AL' => '355',
+		'AM' => '374',
+		'AN' => '599',
+		'AO' => '244',
+		'AQ' => '672',
+		'AR' => '54',
+		'AS' => '1684',
+		'AT' => '43',
+		'AU' => '61',
+		'AW' => '297',
+		'AZ' => '994',
+		'BA' => '387',
+		'BB' => '1246',
+		'BD' => '880',
+		'BE' => '32',
+		'BF' => '226',
+		'BG' => '359',
+		'BH' => '973',
+		'BI' => '257',
+		'BJ' => '229',
+		'BL' => '590',
+		'BM' => '1441',
+		'BN' => '673',
+		'BO' => '591',
+		'BR' => '55',
+		'BS' => '1242',
+		'BT' => '975',
+		'BW' => '267',
+		'BY' => '375',
+		'BZ' => '501',
+		'CA' => '1',
+		'CC' => '61',
+		'CD' => '243',
+		'CF' => '236',
+		'CG' => '242',
+		'CH' => '41',
+		'CI' => '225',
+		'CK' => '682',
+		'CL' => '56',
+		'CM' => '237',
+		'CN' => '86',
+		'CO' => '57',
+		'CR' => '506',
+		'CU' => '53',
+		'CV' => '238',
+		'CX' => '61',
+		'CY' => '357',
+		'CZ' => '420',
+		'DE' => '49',
+		'DJ' => '253',
+		'DK' => '45',
+		'DM' => '1767',
+		'DO' => '1809',
+		'DZ' => '213',
+		'EC' => '593',
+		'EE' => '372',
+		'EG' => '20',
+		'ER' => '291',
+		'ES' => '34',
+		'ET' => '251',
+		'FI' => '358',
+		'FJ' => '679',
+		'FK' => '500',
+		'FM' => '691',
+		'FO' => '298',
+		'FR' => '33',
+		'GA' => '241',
+		'GB' => '44',
+		'GD' => '1473',
+		'GE' => '995',
+		'GH' => '233',
+		'GI' => '350',
+		'GL' => '299',
+		'GM' => '220',
+		'GN' => '224',
+		'GQ' => '240',
+		'GR' => '30',
+		'GT' => '502',
+		'GU' => '1671',
+		'GW' => '245',
+		'GY' => '592',
+		'HK' => '852',
+		'HN' => '504',
+		'HR' => '385',
+		'HT' => '509',
+		'HU' => '36',
+		'ID' => '62',
+		'IE' => '353',
+		'IL' => '972',
+		'IM' => '44',
+		'IN' => '91',
+		'IQ' => '964',
+		'IR' => '98',
+		'IS' => '354',
+		'IT' => '39',
+		'JM' => '1876',
+		'JO' => '962',
+		'JP' => '81',
+		'KE' => '254',
+		'KG' => '996',
+		'KH' => '855',
+		'KI' => '686',
+		'KM' => '269',
+		'KN' => '1869',
+		'KP' => '850',
+		'KR' => '82',
+		'KW' => '965',
+		'KY' => '1345',
+		'KZ' => '7',
+		'LA' => '856',
+		'LB' => '961',
+		'LC' => '1758',
+		'LI' => '423',
+		'LK' => '94',
+		'LR' => '231',
+		'LS' => '266',
+		'LT' => '370',
+		'LU' => '352',
+		'LV' => '371',
+		'LY' => '218',
+		'MA' => '212',
+		'MC' => '377',
+		'MD' => '373',
+		'ME' => '382',
+		'MF' => '1599',
+		'MG' => '261',
+		'MH' => '692',
+		'MK' => '389',
+		'ML' => '223',
+		'MM' => '95',
+		'MN' => '976',
+		'MO' => '853',
+		'MP' => '1670',
+		'MR' => '222',
+		'MS' => '1664',
+		'MT' => '356',
+		'MU' => '230',
+		'MV' => '960',
+		'MW' => '265',
+		'MX' => '52',
+		'MY' => '60',
+		'MZ' => '258',
+		'NA' => '264',
+		'NC' => '687',
+		'NE' => '227',
+		'NG' => '234',
+		'NI' => '505',
+		'NL' => '31',
+		'NO' => '47',
+		'NP' => '977',
+		'NR' => '674',
+		'NU' => '683',
+		'NZ' => '64',
+		'OM' => '968',
+		'PA' => '507',
+		'PE' => '51',
+		'PF' => '689',
+		'PG' => '675',
+		'PH' => '63',
+		'PK' => '92',
+		'PL' => '48',
+		'PM' => '508',
+		'PN' => '870',
+		'PR' => '1',
+		'PT' => '351',
+		'PW' => '680',
+		'PY' => '595',
+		'QA' => '974',
+		'RO' => '40',
+		'RS' => '381',
+		'RU' => '7',
+		'RW' => '250',
+		'SA' => '966',
+		'SB' => '677',
+		'SC' => '248',
+		'SD' => '249',
+		'SE' => '46',
+		'SG' => '65',
+		'SH' => '290',
+		'SI' => '386',
+		'SK' => '421',
+		'SL' => '232',
+		'SM' => '378',
+		'SN' => '221',
+		'SO' => '252',
+		'SR' => '597',
+		'ST' => '239',
+		'SV' => '503',
+		'SY' => '963',
+		'SZ' => '268',
+		'TC' => '1649',
+		'TD' => '235',
+		'TG' => '228',
+		'TH' => '66',
+		'TJ' => '992',
+		'TK' => '690',
+		'TL' => '670',
+		'TM' => '993',
+		'TN' => '216',
+		'TO' => '676',
+		'TR' => '90',
+		'TT' => '1868',
+		'TV' => '688',
+		'TW' => '886',
+		'TZ' => '255',
+		'UA' => '380',
+		'UG' => '256',
+		'US' => '1',
+		'UY' => '598',
+		'UZ' => '998',
+		'VA' => '39',
+		'VC' => '1784',
+		'VE' => '58',
+		'VG' => '1284',
+		'VI' => '1340',
+		'VN' => '84',
+		'VU' => '678',
+		'WF' => '681',
+		'WS' => '685',
+		'XK' => '381',
+		'YE' => '967',
+		'YT' => '262',
+		'ZA' => '27',
+		'ZM' => '260',
+		'ZW' => '263',
+	);
+}
+
+/**
+ * @param $alpha2
+ *
+ * @return mixed|string
+ */
+function commerce_gp_get_country_numeric_code($alpha2)
+{
+	$countries = commerce_gp_get_country_numeric_codes();
+
+	return isset($countries[$alpha2]) ? $countries[$alpha2] : '';
 }
 
 
@@ -293,7 +882,7 @@ function commerce_realex_redirect_checkout_complete() {
 
   // Invalid response or failure.
   $message = t('We were unable to process your credit card payment; reason provided by bank: %message. If the problem persists, contact us to complete your order.', array('%message' => $response['message']));
-  $order = commerce_order_status_update($order, 'checkout_checkout', FALSE, TRUE, t('Realex Payments Redirect:') . ' ' . $message);
+  $order = commerce_order_status_update($order, 'checkout_checkout', FALSE, TRUE, t('Global Payments Redirect:') . ' ' . $message);
   drupal_set_message($message, 'warning');
   watchdog('commerce_realex', 'Payment failed: %message', array('%message' => $response['message']), WATCHDOG_WARNING);
   $uri = commerce_checkout_order_uri($order);

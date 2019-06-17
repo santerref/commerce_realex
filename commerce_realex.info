@@ -1,5 +1,5 @@
-name = Commerce Realex Payments
-description = Realex Payments integration with Drupal Commerce
+name = Commerce Global Payments
+description = Global Payments integration with Drupal Commerce
 package = Commerce - Payment
 dependencies[] = commerce
 dependencies[] = commerce_payment
@@ -8,4 +8,3 @@ core = 7.x
 files[] = includes/commerce_realex_remote.inc
 files[] = includes/commerce_realex_remote_3dsecure.inc
 files[] = includes/commerce_realex_remote.checkout_pane.inc
-
