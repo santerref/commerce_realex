@@ -220,7 +220,7 @@ function commerce_realex_redirect_redirect_form($form, &$form_state, $order, $pa
 		  "HPP_BILLING_CITY"       => isset($address['locality']) ? $address['locality'] : '',
 		  "HPP_BILLING_STATE"      => $hppBillingState,
 		  "HPP_BILLING_POSTALCODE" => $zip_numbers,
-		  "HPP_BILLING_COUNTRY"    => !empty($country) ? commerce_gp_get_country_numeric_code($country) : '',
+		  "HPP_BILLING_COUNTRY"    => !empty($country) ? commerce_realex_get_country_numeric_code($country) : '',
 	  );
 	  $additionalHppData[] = $hppBillingFields;
   } else {
@@ -270,7 +270,7 @@ function commerce_realex_redirect_redirect_form($form, &$form_state, $order, $pa
 		  "HPP_SHIPPING_CITY"       => isset($address['locality']) ? $address['locality'] : '',
 		  "HPP_SHIPPING_STATE"      => $hppShippingState,
 		  "HPP_SHIPPING_POSTALCODE" => $zip_numbers,
-		  "HPP_SHIPPING_COUNTRY"    => !empty($country) ? commerce_gp_get_country_numeric_code($country) : '',
+		  "HPP_SHIPPING_COUNTRY"    => !empty($country) ? commerce_realex_get_country_numeric_code($country) : '',
 	  );
   } else {
 	  $hppShippingFields = array(
@@ -331,9 +331,11 @@ function commerce_realex_redirect_redirect_form($form, &$form_state, $order, $pa
 
 
 /**
+ * Returns an array of numeric country codes, indexed by alpha-2 code.
+ *
  * @return array
  */
-function commerce_gp_get_country_numeric_codes()
+function commerce_realex_get_country_numeric_codes()
 {
 	return array(
 		'AF' => '004',
@@ -588,7 +590,11 @@ function commerce_gp_get_country_numeric_codes()
 	);
 }
 
-function commerce_gp_get_country_phone_codes() {
+/**
+ * Returns an arrya of numeric country phone codes, indexed by alpha-2 country
+ * code.
+ */
+function commerce_realex_get_country_phone_codes() {
 	return array (
 		'AD' => '376',
 		'AE' => '971',
@@ -824,13 +830,15 @@ function commerce_gp_get_country_phone_codes() {
 }
 
 /**
+ * Given an alpha-2 country code, returns the country numeric code.
+ *
  * @param $alpha2
  *
  * @return mixed|string
  */
-function commerce_gp_get_country_numeric_code($alpha2)
+function commerce_realex_get_country_numeric_code($alpha2)
 {
-	$countries = commerce_gp_get_country_numeric_codes();
+	$countries = commerce_realex_get_country_numeric_codes();
 
 	return isset($countries[$alpha2]) ? $countries[$alpha2] : '';
 }
