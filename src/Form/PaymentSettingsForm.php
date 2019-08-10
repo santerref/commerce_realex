@@ -43,21 +43,21 @@ class PaymentSettingsForm extends ConfigFormBase {
 
     $form['realex_server_url'] = array(
       '#type' => 'url',
-      '#title' => $this->t('Realex Server URL for payment requests'),
+      '#title' => $this->t('Global Payments Server URL for payment requests'),
       '#default_value' => $config->get('realex_server_url'),
       '#required' => TRUE,
     );
 
     $form['realex_merchant_id'] = array(
       '#type' => 'textfield',
-      '#title' => $this->t('Realex Merchant ID'),
+      '#title' => $this->t('Global Payments Merchant ID'),
       '#default_value' => $config->get('realex_merchant_id'),
       '#required' => TRUE,
     );
 
     $form['realex_shared_secret'] = array(
       '#type' => 'textfield',
-      '#title' => $this->t('Realex Shared Secret'),
+      '#title' => $this->t('Global Payments Shared Secret'),
       '#default_value' => $config->get('realex_shared_secret'),
       '#required' => TRUE,
     );

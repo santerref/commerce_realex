@@ -1,6 +1,6 @@
 {
     "name": "drupal/commerce_realex",
-    "description": "Commerce Realex Payments.",
+    "description": "Commerce Realex / Global Payments.",
     "type": "drupal-module",
     "homepage": "https://drupal.org/project/commerce_realex",
     "authors": [

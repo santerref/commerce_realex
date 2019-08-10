@@ -30,14 +30,14 @@ class RealexHppResponse extends ControllerBase {
   protected $payableItemId;
 
   /**
-   * The parsed response from Realex.
+   * The parsed response from Global Payments.
    *
    * @var com\realexpayments\hpp\sdk\domain\HppResponse
    */
   protected $hppResponse;
 
   /**
-   * Process a HPP payment respnse from RealEx.
+   * Process a HPP payment respnse from Global Payments.
    */
   public function processResponse($payable_item_id) {
 
@@ -53,7 +53,7 @@ class RealexHppResponse extends ControllerBase {
     }
     $realex_config = $this->payableItem->getValue('realex_config');
 
-    // Parse the Realex response sent by the client-side library
+    // Parse the Global Payments response sent by the client-side library
     $realexHpp = new RealexHpp($realex_config['realex_shared_secret']);
     $responseJson = $_POST['hppResponse'];
     try {
@@ -72,7 +72,7 @@ class RealexHppResponse extends ControllerBase {
     }
 
     // Get payable Item ID out of response supplementary data.
-    // We sent this to Realex in the request JSON, expect to get it back.
+    // We sent this to Global Payments in the request JSON, expect to get it back.
     $this->payableItemId = $supplementary_data['temporary_payable_item_id'];
 
     // Retrieve object representing temporary record from paymentTempStore.

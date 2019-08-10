@@ -10,7 +10,7 @@ commerce_payment.commerce_payment_gateway.plugin.realex_redirect_checkout:
       label: 'Merchant ID'
     realex_account:
       type: string
-      label: 'Realex Account'
+      label: 'Global Payments Account'
     realex_shared_secret:
       type: string
       label: 'Shared Secret'

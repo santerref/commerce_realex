@@ -1,6 +1,6 @@
-name: Commerce Realex Payments
+name: Commerce Realex / Global Payments
 type: module
-description: Realex Payments integration with Drupal Commerce
+description: Global Payments (formerly Realex) integration with Drupal Commerce
 core: 8.x
 package: Commerce (contrib)
 dependencies:

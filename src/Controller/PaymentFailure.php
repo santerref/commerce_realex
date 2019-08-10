@@ -63,7 +63,7 @@ class PaymentFailure extends Controllerbase {
       \Drupal::logger('commerce_realex')->error($e->getMessage());
     }
 
-    //Generated a new UUID - as Realex need each attempt to be unique
+    //Generated a new UUID - as Global Payment need each attempt to be unique.
     $uuid_service = \Drupal::service('uuid');
     $uuid = $uuid_service->generate();
 
@@ -74,7 +74,7 @@ class PaymentFailure extends Controllerbase {
       'values' => $this->payableItem['values'],
     ];
 
-    // Save it to private temp store under the UUID "payment object" key
+    // Save it to private temp store under the UUID "payment object" key.
     $this->paymentTempStore->set($uuid, $storage_data);
 
     return $this->redirect('commerce_realex.payment_form', ['payable_item_id' => $uuid]);

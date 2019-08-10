@@ -132,8 +132,8 @@ class RealexPaymentForm extends FormBase {
    * {@inheritdoc}
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
-    // Nothing Special.  We are actually using JS to send a request to Realex,
-    // then redirect to our realex Response controller.
+    // Nothing Special.  We are actually using JS to send a request to Global
+    // Payments, then redirect to our Global Payments Response controller.
   }
 
 }

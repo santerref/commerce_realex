@@ -45,7 +45,7 @@ class PayableItem {
    * Save a PayableItem in PrivateUsertempStore.
    *
    * We don't need to save anything about the Payment itself permanently.
-   * Items using this class can use the Realex Order ID as payment ID.
+   * Items using this class can use the Global Payments Order ID as payment ID.
    *
    * @return string
    *   The key the object was stored under in the Private User temp Store;
@@ -131,7 +131,7 @@ class PayableItem {
   public function getPayableAmount() {
     // @todo Could this be more robust by looking up the permit type (GUID)?
     if (isset($this->values['payable_amount'])) {
-      // Realex payments wants cents not euros.
+      // Global Payments payments wants cents not euros.
       $cents = $this->values['payable_amount'] * 100;
       return (int)$cents;
     }

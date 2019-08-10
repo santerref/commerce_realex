@@ -9,12 +9,12 @@ use Drupal\commerce_payment\Exception\PaymentGatewayException;
 use Symfony\Component\HttpFoundation\Request;
 
 /**
- * Provides the Realex Lightbox Checkout payment gateway.
+ * Provides the Global Payments Lightbox Checkout payment gateway.
  *
  * @CommercePaymentGateway(
  *   id = "realex_lightbox_checkout",
- *   label = @Translation("Realex (Lightbox with Iframe)"),
- *   display_label = @Translation("Realex"),
+ *   label = @Translation("Global Payments (Lightbox with Iframe)"),
+ *   display_label = @Translation("Global Payments"),
  *    forms = {
  *     "offsite-payment" = "Drupal\commerce_realex\PluginForm\RedirectCheckoutForm",
  *   },
@@ -40,32 +40,32 @@ class LightboxCheckout extends OffsitePaymentGatewayBase {
 
     $form['realex_server_url'] = [
       '#type' => 'textfield',
-      '#title' => $this->t('Realex Server URL'),
-      '#description' => $this->t('Realex Server URL for payment requests.'),
+      '#title' => $this->t('Global Payments Server URL'),
+      '#description' => $this->t('Global Payments Server URL for payment requests.'),
       '#default_value' => $this->configuration['realex_server_url'],
       '#required' => TRUE,
     ];
 
     $form['realex_merchant_id'] = [
       '#type' => 'textfield',
-      '#title' => $this->t('Realex Merchant ID'),
-      '#description' => $this->t('This is the Merchant ID provided by Realex.'),
+      '#title' => $this->t('Global Payments Merchant ID'),
+      '#description' => $this->t('This is the Merchant ID provided by Global Payments.'),
       '#default_value' => $this->configuration['realex_merchant_id'],
       '#required' => TRUE,
     ];
 
     $form['realex_account'] = [
       '#type' => 'textfield',
-      '#title' => $this->t('Realex Account'),
-      '#description' => $this->t('This is the Realex Account.'),
+      '#title' => $this->t('Global Payments Account'),
+      '#description' => $this->t('This is the Global Payments Account.'),
       '#default_value' => $this->configuration['realex_account'],
       '#required' => TRUE,
     ];
 
     $form['realex_shared_secret'] = [
       '#type' => 'textfield',
-      '#title' => $this->t('Realex Shared Secret'),
-      '#description' => $this->t('This is the shared secret provided by Realex.'),
+      '#title' => $this->t('Global Payments Shared Secret'),
+      '#description' => $this->t('This is the shared secret provided by Global Payments.'),
       '#default_value' => $this->configuration['realex_shared_secret'],
       '#required' => TRUE,
     ];

@@ -23,7 +23,7 @@ interface PayableItemInterface {
 
   /**
    * A set of methods to prepare suitable human-readable strings for display on
-   * payment forms, Realex fields, CRM record titles & descriptions, etc.
+   * payment forms, Global Payments fields, CRM record titles & descriptions, etc.
    *
    * @return string
    */
@@ -43,10 +43,10 @@ interface PayableItemInterface {
   // public getRenderSummary();
 
   /**
-   * Get the name of a Realex Payment Account for this payable item type.
+   * Get the name of a Global Payments Account for this payable item type.
    *
    * @return string
-   *   Name of Realex Payment Account.
+   *   Name of Global Payments Account.
    */
   // public function getPaymentAccount();
 
