@@ -223,7 +223,8 @@ function commerce_realex_redirect_redirect_form($form, &$form_state, $order, $pa
       "HPP_BILLING_COUNTRY"    => !empty($country) ? commerce_realex_get_country_numeric_code($country) : '',
     );
     $additionalHppData[] = $hppBillingFields;
-  } else {
+  }
+  else {
     // don't think you can have orders without billing details, but let's stay on the safe side
     $hppBillingFields    = array(
       "HPP_BILLING_STREET1"    => '',
@@ -272,7 +273,8 @@ function commerce_realex_redirect_redirect_form($form, &$form_state, $order, $pa
       "HPP_SHIPPING_POSTALCODE" => $zip_numbers,
       "HPP_SHIPPING_COUNTRY"    => !empty($country) ? commerce_realex_get_country_numeric_code($country) : '',
     );
-  } else {
+  }
+  else {
     $hppShippingFields = array(
       "HPP_SHIPPING_STREET1"    => '',
       "HPP_SHIPPING_STREET2"    => '',
@@ -288,7 +290,8 @@ function commerce_realex_redirect_redirect_form($form, &$form_state, $order, $pa
   if (array_values($hppBillingFields) === array_values($hppShippingFields)) {
     $additionalHppData["HPP_ADDRESS_MATCH_INDICATOR"] = "TRUE";
     $additionalHppData[]                              = $hppShippingFields;
-  } else {
+  }
+  else {
     $additionalHppData["HPP_ADDRESS_MATCH_INDICATOR"] = "FALSE";
     $additionalHppData[]                              = $hppShippingFields;
   }
@@ -298,7 +301,8 @@ function commerce_realex_redirect_redirect_form($form, &$form_state, $order, $pa
       foreach ($additionalHppValue as $additionalHppPropChild => $additionalHppValueChild) {
         $data[$additionalHppPropChild] = $additionalHppValueChild;
       }
-    } else {
+    }
+    else {
       $data[$additionalHppProp] = $additionalHppValue;
     }
   }
