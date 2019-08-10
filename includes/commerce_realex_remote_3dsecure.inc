@@ -2,7 +2,7 @@
 
 /**
  * @file
- * Callback methods for Realex Payments Remote integration.
+ * Callback methods for Global Payments Remote integration.
  */
 
 /**

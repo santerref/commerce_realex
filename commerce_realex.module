@@ -2,7 +2,7 @@
 
 /**
  * @file
- * Integrate Realex Payments gateway with Drupal Commerce.
+ * Integrate Global Payments (formerly Realex Payments) gateway with Drupal Commerce.
  */
 
 /**
@@ -26,7 +26,7 @@ function commerce_realex_menu() {
     'file' => 'includes/commerce_realex_remote_3dsecure.inc',
   );
 
-  // Path to receive redirect user back to after Realex Payments payment is finished.
+  // Path to receive redirect user back to after Global Payments payment is finished.
   $items['commerce-realex/redirect/complete'] = array(
     'page callback' => 'commerce_realex_redirect_checkout_complete',
     'page arguments' => array(),
@@ -132,7 +132,7 @@ function commerce_realex_commerce_checkout_router($order, $checkout_page) {
 }
 
 /**
- * Send the request to Realex Payments.
+ * Send the request to Global Payments.
  *
  * @param $url
  *   URL to send the request to.
@@ -198,14 +198,14 @@ function _commerce_realex_build_request_sha1hash($request, $type = 'auth') {
 }
 
 /**
- * Map card types to codes expected by Realex Payments.
+ * Map card types to codes expected by Global Payments.
  *
  * @param $card
  *   Card name.
  * @param $number
  *   Card number - needed for checking bin ranges.
  * @return
- *   Realex Payments card type code.
+ *   Global Payments card type code.
  */
 function _commerce_realex_get_card_type($card, $number) {
   $bin_range = substr($number, 0, 4);
@@ -227,7 +227,7 @@ function _commerce_realex_get_card_type($card, $number) {
 }
 
 /**
- * Retrieve list of card types supported by Realex Payments.
+ * Retrieve list of card types supported by Global Payments.
  */
 function _commerce_realex_supported_card_types() {
   return array(
@@ -242,8 +242,8 @@ function _commerce_realex_supported_card_types() {
 }
 
 /**
- * Return the Drupal Commerce and Commerce Realex versions for sending to Realex Payments
- * in the Comment2 field.
+ * Return the Drupal Commerce and Commerce Global/Realex versions for sending to
+ * Global Payments in the Comment2 field.
  */
 function _commerce_realex_get_module_versions() {
   $commerce_path = drupal_get_path('module', 'commerce');
@@ -263,7 +263,8 @@ function _commerce_realex_get_module_versions() {
 /**
  * Parse the response XML and create and object.
  *
- * Code below is based on sample code provided by Realex Payments at http://resource.realexpayments.com/m.php?ct=integration_oscode.php
+ * Code below is based on sample code provided by Global Payments at
+ * http://resource.realexpayments.com/m.php?ct=integration_oscode.php
  */
 class RealexParser {
 

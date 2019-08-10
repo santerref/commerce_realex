@@ -2,7 +2,7 @@
 
 /**
  * @file
- * Callback methods for Realex Payments Remote integration.
+ * Callback methods for Global Payments Remote integration.
  */
 
 /**
@@ -121,7 +121,7 @@ function commerce_realex_remote_commerce_payment_method_settings_form($settings 
       'fexco' => 'Fexco',
       'euroConex' => 'Elavon',
      ),
-    '#description' => t('Should DCC be available to the user? You must have this preconfigured on your Realex Payments sub-account in advance.'),
+    '#description' => t('Should DCC be available to the user? You must have this preconfigured on your Global Payments sub-account in advance.'),
     '#default_value' => isset($settings['dcc_provider']) ? $settings['dcc_provider'] : 'none',
   );
   */
@@ -420,7 +420,7 @@ function commerce_realex_remote_do_auth_request($payment_method, $request, &$ord
 }
 
 /**
- * Contact Realex Payments to get a DCC offer.
+ * Contact Global Payments to get a DCC offer.
  */
 function commerce_realex_remote_get_dcc_offer($payment_method, $pane_values, &$order, $charge) {
   $start_date = NULL;
@@ -537,7 +537,7 @@ function commerce_realex_remote_get_dcc_offer($payment_method, $pane_values, &$o
 }
 
 /**
- * Process the Realex Payments response.
+ * Process the Global Payments response.
  *
  * @param $type
  *   Message response type.
@@ -568,8 +568,8 @@ function _commerce_realex_remote_verify_response($type, $request, &$response, $o
   $pasref = isset($response['pasref']) ? $response['pasref'] : '';
   $authcode = isset($response['authcode']) ? $response['authcode'] : ''; // Needed for Fexco DCC.
 
-  // This digital signature should correspond to the one Realex Payments returns
-  // and can therefore be used to verify the message Realex Payments sends back.
+  // This digital signature should correspond to the one Global Payments returns
+  // and can therefore be used to verify the message Global Payments sends back.
   $tmp = "$timestamp.$merchantid.$orderid.$resultcode.$message.$pasref.$authcode";
   $sha1hash = sha1($tmp);
   $tmp = "$sha1hash.$secret";

@@ -2,7 +2,7 @@
 
 /**
  * @file
- * Callback methods for Realex Payments Redirect integration.
+ * Callback methods for Global Payments Redirect integration.
  */
 
 define('GATEWAY_URL', 'https://hpp.realexpayments.com/pay');
@@ -901,7 +901,7 @@ function _commerce_realex_redirect_back($url) {
 }
 
 /**
- * Process the Realex response.
+ * Process the Global Payments response.
  *
  * @param $response
  *   Parsed response as an array.
@@ -929,8 +929,8 @@ function _commerce_realex_redirect_verify_response(&$response, $order, $payment_
   $pasref = isset($response['pasref']) ? $response['pasref'] : '';
   $authcode = isset($response['authcode']) ? $response['authcode'] : '';
 
-  // This digital signature should correspond to the one Realex Payments returns
-  // and can therefore be used to verify the message Realex Payments sends back.
+  // This digital signature should correspond to the one Global Payments returns
+  // and can therefore be used to verify the message Global Payments sends back.
   $tmp = "$timestamp.$merchantid.$orderid.$resultcode.$message.$pasref.$authcode";
   $sha1hash = sha1($tmp);
   $tmp = "$sha1hash.$secret";
