@@ -325,7 +325,7 @@ class CommerceRealexParser {
    * would be placed in the variable $RESPONSE_SOMETHING
    */
   function cDataHandler($parser, $cdata) {
-    if ( trim ( $cdata ) ) {
+    if (trim($cdata)) {
       if ($this->currentTSSCheck != 0) {
         $this->record['tsschecks']["$this->currentTSSCheck"] = $cdata;
       }
@@ -335,8 +335,8 @@ class CommerceRealexParser {
   }
 
   /**
-   * The "endElement()" function is called when the closing tag of an element is found.
-   * Just removes that element from the array of parent elements.
+   * The "endElement()" function is called when the closing tag of an element is
+   * found. Just removes that element from the array of parent elements.
    */
   function endElement($parser, $name) {
     $this->currentTSSCheck = 0;
