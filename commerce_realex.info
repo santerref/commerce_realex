@@ -8,3 +8,4 @@ core = 7.x
 files[] = includes/commerce_realex_remote.inc
 files[] = includes/commerce_realex_remote_3dsecure.inc
 files[] = includes/commerce_realex_remote.checkout_pane.inc
+

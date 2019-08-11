@@ -180,7 +180,7 @@ function commerce_realex_redirect_redirect_form($form, &$form_state, $order, $pa
   }
 //  $data['COMMENT2'] = _commerce_realex_get_module_versions();
 
-  $additionalHppData = array(
+  $additional_hpp_data = array(
     "HPP_VERSION"        => 2,
     "HPP_CUSTOMER_EMAIL" => isset($order->mail) ? $order->mail : '',
     "COMMENT1"           => 'drupalcommerce7'
@@ -205,28 +205,28 @@ function commerce_realex_redirect_redirect_form($form, &$form_state, $order, $pa
     $data['BILLING_CO'] = $country;
     $data['BILLING_CODE'] = $zip_postal_code;
 
-    $hppBillingState = '';
+    $hpp_billing_state = '';
 
     if (!empty($country) && in_array($address['country'], array('US', 'CA'))) {
       if (isset($address['administrative_area']) && !empty($address['administrative_area'])) {
-        $hppBillingState = $address['administrative_area'];
+        $hpp_billing_state = $address['administrative_area'];
       }
     }
 
-    $hppBillingFields    = array(
+    $hpp_billing_fields    = array(
       "HPP_BILLING_STREET1"    => $street_one,
       "HPP_BILLING_STREET2"    => '',
       "HPP_BILLING_STREET3"    => '',
       "HPP_BILLING_CITY"       => isset($address['locality']) ? $address['locality'] : '',
-      "HPP_BILLING_STATE"      => $hppBillingState,
+      "HPP_BILLING_STATE"      => $hpp_billing_state,
       "HPP_BILLING_POSTALCODE" => $zip_numbers,
       "HPP_BILLING_COUNTRY"    => !empty($country) ? commerce_realex_get_country_numeric_code($country) : '',
     );
-    $additionalHppData[] = $hppBillingFields;
+    $additional_hpp_data[] = $hpp_billing_fields;
   }
   else {
     // don't think you can have orders without billing details, but let's stay on the safe side
-    $hppBillingFields    = array(
+    $hpp_billing_fields    = array(
       "HPP_BILLING_STREET1"    => '',
       "HPP_BILLING_STREET2"    => '',
       "HPP_BILLING_STREET3"    => '',
@@ -256,26 +256,26 @@ function commerce_realex_redirect_redirect_form($form, &$form_state, $order, $pa
     $data['SHIPPING_CO'] = $country;
     $data['SHIPPING_CODE'] = $zip_postal_code;
 
-    $hppShippingState = '';
+    $hpp_shipping_state = '';
 
     if (!empty($country) && in_array($address['country'], array('US', 'CA'))) {
       if (isset($address['administrative_area']) && !empty($address['administrative_area'])) {
-        $hppShippingState = $address['administrative_area'];
+        $hpp_shipping_state = $address['administrative_area'];
       }
     }
 
-    $hppShippingFields = array(
+    $hpp_shipping_fields = array(
       "HPP_SHIPPING_STREET1"    => $street_one,
       "HPP_SHIPPING_STREET2"    => '',
       "HPP_SHIPPING_STREET3"    => '',
       "HPP_SHIPPING_CITY"       => isset($address['locality']) ? $address['locality'] : '',
-      "HPP_SHIPPING_STATE"      => $hppShippingState,
+      "HPP_SHIPPING_STATE"      => $hpp_shipping_state,
       "HPP_SHIPPING_POSTALCODE" => $zip_numbers,
       "HPP_SHIPPING_COUNTRY"    => !empty($country) ? commerce_realex_get_country_numeric_code($country) : '',
     );
   }
   else {
-    $hppShippingFields = array(
+    $hpp_shipping_fields = array(
       "HPP_SHIPPING_STREET1"    => '',
       "HPP_SHIPPING_STREET2"    => '',
       "HPP_SHIPPING_STREET3"    => '',
@@ -286,24 +286,24 @@ function commerce_realex_redirect_redirect_form($form, &$form_state, $order, $pa
     );
   }
 
-  // order and type matter
-  if (array_values($hppBillingFields) === array_values($hppShippingFields)) {
-    $additionalHppData["HPP_ADDRESS_MATCH_INDICATOR"] = "TRUE";
-    $additionalHppData[]                              = $hppShippingFields;
+  // Order and type matter.
+  if (array_values($hpp_billing_fields) === array_values($hpp_shipping_fields)) {
+    $additional_hpp_data["HPP_ADDRESS_MATCH_INDICATOR"] = "TRUE";
+    $additional_hpp_data[]                              = $hpp_shipping_fields;
   }
   else {
-    $additionalHppData["HPP_ADDRESS_MATCH_INDICATOR"] = "FALSE";
-    $additionalHppData[]                              = $hppShippingFields;
+    $additional_hpp_data["HPP_ADDRESS_MATCH_INDICATOR"] = "FALSE";
+    $additional_hpp_data[]                              = $hpp_shipping_fields;
   }
 
-  foreach ($additionalHppData as $additionalHppProp => $additionalHppValue) {
-    if (is_array($additionalHppValue)) {
-      foreach ($additionalHppValue as $additionalHppPropChild => $additionalHppValueChild) {
-        $data[$additionalHppPropChild] = $additionalHppValueChild;
+  foreach ($additional_hpp_data as $additional_hpp_prop => $additional_hpp_value) {
+    if (is_array($additional_hpp_value)) {
+      foreach ($additional_hpp_value as $additional_hpp_prop_child => $additional_hpp_value_child) {
+        $data[$additional_hpp_prop_child] = $additional_hpp_value_child;
       }
     }
     else {
-      $data[$additionalHppProp] = $additionalHppValue;
+      $data[$additional_hpp_prop] = $additional_hpp_value;
     }
   }
 
@@ -339,8 +339,7 @@ function commerce_realex_redirect_redirect_form($form, &$form_state, $order, $pa
  *
  * @return array
  */
-function commerce_realex_get_country_numeric_codes()
-{
+function commerce_realex_get_country_numeric_codes() {
   return array(
     'AF' => '004',
     'AX' => '248',
@@ -595,7 +594,7 @@ function commerce_realex_get_country_numeric_codes()
 }
 
 /**
- * Returns an arrya of numeric country phone codes, indexed by alpha-2 country
+ * Returns an array of numeric country phone codes, indexed by alpha-2 country
  * code.
  */
 function commerce_realex_get_country_phone_codes() {
@@ -840,8 +839,7 @@ function commerce_realex_get_country_phone_codes() {
  *
  * @return mixed|string
  */
-function commerce_realex_get_country_numeric_code($alpha2)
-{
+function commerce_realex_get_country_numeric_code($alpha2) {
   $countries = commerce_realex_get_country_numeric_codes();
 
   return isset($countries[$alpha2]) ? $countries[$alpha2] : '';
