@@ -25,7 +25,7 @@ function commerce_realex_redirect_commerce_payment_method_settings_form($setting
   $form['account_id'] = [
     '#type' => 'textfield',
     '#title' => t('Global Payments Account ID'),
-    '#default_value' => isset($settings['account_id']) ?  $settings['account_id'] : '',
+    '#default_value' => isset($settings['account_id']) ? $settings['account_id'] : '',
     '#size' => 16,
     '#required' => TRUE,
   ];
@@ -73,7 +73,7 @@ function commerce_realex_redirect_commerce_payment_method_settings_form($setting
     '#type' => 'select',
     '#title' => t('Payment action'),
     '#options' => [1 => t('Authorize and Capture'), 0 => t('Authorize only')],
-    '#default_value' => isset($settings['auto_settle']) ?  $settings['auto_settle'] : 1,
+    '#default_value' => isset($settings['auto_settle'])   $settings['auto_settle'] : 1,
     '#required' => TRUE,
   ];
 
@@ -81,7 +81,7 @@ function commerce_realex_redirect_commerce_payment_method_settings_form($setting
     '#type' => 'textfield',
     '#title' => t('Variable reference'),
     '#description' => t('Any reference you also would like to assign to the customer. This can allow checking, using realscore, of previous transactions by this customer.'),
-    '#default_value' => isset($settings['varref']) ?  $settings['varref'] : '',
+    '#default_value' => isset($settings['varref']) ? $settings['varref'] : '',
     '#size' => 50,
     '#required' => FALSE,
   ];
@@ -104,7 +104,7 @@ function commerce_realex_redirect_commerce_payment_method_submit_form($payment_m
 
 /**
  * Payment method callback: redirect form, a wrapper around the module's general
- *   use function for building a realex form.
+ * use function for building a realex form.
  */
 function commerce_realex_redirect_redirect_form($form, &$form_state, $order, $payment_method) {
   // Return an error if the enabling action's settings haven't been configured.
@@ -183,7 +183,7 @@ function commerce_realex_redirect_redirect_form($form, &$form_state, $order, $pa
   $additional_hpp_data = [
     "HPP_VERSION"        => 2,
     "HPP_CUSTOMER_EMAIL" => isset($order->mail) ? $order->mail : '',
-    "COMMENT1"           => 'drupalcommerce7'
+    "COMMENT1"           => 'drupalcommerce7',
   ];
 
   // Load the customer billing profile for the order.
@@ -225,8 +225,9 @@ function commerce_realex_redirect_redirect_form($form, &$form_state, $order, $pa
     $additional_hpp_data[] = $hpp_billing_fields;
   }
   else {
-    // don't think you can have orders without billing details, but let's stay on the safe side
-    $hpp_billing_fields    = [
+    // Don't think you can have orders without billing details, but let's stay
+    // on the safe side.
+    $hpp_billing_fields = [
       "HPP_BILLING_STREET1"    => '',
       "HPP_BILLING_STREET2"    => '',
       "HPP_BILLING_STREET3"    => '',
@@ -313,10 +314,10 @@ function commerce_realex_redirect_redirect_form($form, &$form_state, $order, $pa
   drupal_alter('commerce_realex_redirect_data', $data, $order);
 
   // Live url.
-  $form['#action'] = !empty($payment_method['settings']['gateway_url'])?$payment_method['settings']['gateway_url']: GATEWAY_URL;
-  // Sandbox
+  $form['#action'] = !empty($payment_method['settings']['gateway_url']) ? $payment_method['settings']['gateway_url'] : GATEWAY_URL;
+  // Sandbox.
   if (!empty($payment_method['settings']['test_mode'])) {
-    $form['#action'] = !empty($payment_method['settings']['gateway_url'])?$payment_method['settings']['gateway_url_test']: GATEWAY_URL_TEST;
+    $form['#action'] = !empty($payment_method['settings']['gateway_url']) ? $payment_method['settings']['gateway_url_test'] : GATEWAY_URL_TEST;
   }
 
   foreach ($data as $name => $value) {
@@ -333,11 +334,11 @@ function commerce_realex_redirect_redirect_form($form, &$form_state, $order, $pa
   return $form;
 }
 
-
 /**
  * Returns an array of numeric country codes, indexed by alpha-2 code.
  *
  * @return array
+ *   Array of numeric country codes.
  */
 function commerce_realex_get_country_numeric_codes() {
   return [
@@ -596,6 +597,9 @@ function commerce_realex_get_country_numeric_codes() {
 /**
  * Returns an array of numeric country phone codes, indexed by alpha-2 country
  * code.
+ *
+ * @return array
+ *   Array of numeric country phone codes.
  */
 function commerce_realex_get_country_phone_codes() {
   return [
@@ -835,16 +839,17 @@ function commerce_realex_get_country_phone_codes() {
 /**
  * Given an alpha-2 country code, returns the country numeric code.
  *
- * @param $alpha2
+ * @param string $alpha2
+ *   Alpha-2 country code.
  *
  * @return mixed|string
+ *   Numeric country code or empty string.
  */
 function commerce_realex_get_country_numeric_code($alpha2) {
   $countries = commerce_realex_get_country_numeric_codes();
 
   return isset($countries[$alpha2]) ? $countries[$alpha2] : '';
 }
-
 
 /**
  * Returns an array of all possible language codes.
@@ -857,9 +862,36 @@ function commerce_realex_redirect_languages() {
  * Returns an array of all possible currency codes.
  */
 function commerce_realex_redirect_currencies() {
-  return drupal_map_assoc(['AUD', 'BRL', 'CAD', 'CHF', 'CZK', 'DKK', 'EUR', 'GBP', 'HKD', 'HUF', 'ILS', 'JPY', 'MXN', 'MYR', 'NOK', 'NZD', 'PHP', 'PLN', 'SEK', 'SGD', 'THB', 'TWD', 'USD']);
+  return drupal_map_assoc([
+    'AUD',
+    'BRL',
+    'CAD',
+    'CHF',
+    'CZK',
+    'DKK',
+    'EUR',
+    'GBP',
+    'HKD',
+    'HUF',
+    'ILS',
+    'JPY',
+    'MXN',
+    'MYR',
+    'NOK',
+    'NZD',
+    'PHP',
+    'PLN',
+    'SEK',
+    'SGD',
+    'THB',
+    'TWD',
+    'USD',
+  ]);
 }
 
+/**
+ * Checkout completion function.
+ */
 function commerce_realex_redirect_checkout_complete() {
   $request = [];
 
@@ -915,11 +947,11 @@ function _commerce_realex_redirect_back($url) {
 /**
  * Process the Global Payments response.
  *
- * @param $response
+ * @param array $response
  *   Parsed response as an array.
- * @param $order
+ * @param object $order
  *   Commerce order object.
- * @param $payment_method
+ * @param array $payment_method
  *   Payment method array.
  */
 function _commerce_realex_redirect_verify_response(&$response, $order, $payment_method) {
@@ -950,7 +982,7 @@ function _commerce_realex_redirect_verify_response(&$response, $order, $payment_
 
   $success = FALSE;
 
-  // Check to see if hashes match or not
+  // Check to see if hashes match or not.
   if ($sha1hash != $response['sha1hash']) {
     watchdog('commerce_realex', 'Hash match failed for order @order_id.', ['@order_id' => $response['order_id']]);
     drupal_set_message(t("Hashes don't match - response not authenticated!"), 'error');
@@ -968,13 +1000,13 @@ function _commerce_realex_redirect_verify_response(&$response, $order, $payment_
 /**
  * Save the transaction and update the order.
  *
- * @param $payment_method
+ * @param array $payment_method
  *   Payment method array.
- * @param $order
+ * @param object $order
  *   Commerce order object.
- * @param $response
+ * @param array $response
  *   Response data.
- * @param $log
+ * @param string $log
  *   Optional extra log message.
  */
 function commerce_realex_redirect_transaction_save($payment_method, $order, $response, $log = '') {
@@ -991,6 +1023,7 @@ function commerce_realex_redirect_transaction_save($payment_method, $order, $res
     case '00':
       $transaction->status = COMMERCE_PAYMENT_STATUS_SUCCESS;
       break;
+
     default:
       $transaction->status = COMMERCE_PAYMENT_STATUS_FAILURE;
   }
@@ -1091,10 +1124,12 @@ function commerce_realex_redirect_3dsecure_eci_lookup($eci) {
     case 2:
       $scenario = t('Full 3D Secure – cardholder Enrolled');
       break;
+
     case 6:
     case 1:
       $scenario = t('Merchant 3D Secure – cardholder not enrolled or attempt ACS server was used');
       break;
+
     case 7:
     case 0:
       $scenario = t('Non 3D Secure transaction');

@@ -1,6 +1,11 @@
 <?php
 
 /**
+ * @file
+ * Checkout pane form for Commerce Realex.
+ */
+
+/**
  * Implements hook_checkout_form().
  */
 function commerce_realex_remote_dcc_pane_checkout_form($form, &$form_state, $checkout_pane, $order) {
@@ -49,7 +54,7 @@ function commerce_realex_remote_dcc_pane_checkout_form_submit($form, &$form_stat
     return;
   }
 
-return;
+  return;
   // TODO: get $pane_values['credit_card']
   $payment_method = commerce_payment_method_instance_load($order->data['payment_method']);
 
@@ -90,7 +95,7 @@ return;
       $request['billing']['customer_name'] = check_plain($address['name_line']);
     }
     elseif (isset($address['first_name'])) {
-      $request['billing']['customer_name'] = check_plain($address['first_name'] . ' ' .  $address['last_name']);
+      $request['billing']['customer_name'] = check_plain($address['first_name'] . ' ' . $address['last_name']);
     }
     $request['billing']['street_one'] = isset($address['thoroughfare']) ? check_plain($address['thoroughfare']) : '';
     $request['billing']['postcode'] = isset($address['postal_code']) ? check_plain($address['postal_code']) : '';
@@ -110,7 +115,7 @@ return;
       $request['shipping']['customer_name'] = check_plain($address['name_line']);
     }
     elseif (isset($address['first_name'])) {
-      $request['shipping']['customer_name'] = check_plain($address['first_name'] . ' ' .  $address['last_name']);
+      $request['shipping']['customer_name'] = check_plain($address['first_name'] . ' ' . $address['last_name']);
     }
     $request['shipping']['street_one'] = isset($address['thoroughfare']) ? check_plain($address['thoroughfare']) : '';
     $request['shipping']['postcode'] = isset($address['postal_code']) ? check_plain($address['postal_code']) : '';
@@ -135,7 +140,7 @@ return;
     if (in_array($line_item->type, commerce_product_line_item_types())) {
       $product = $line_item_wrapper->commerce_product->value();
       $products[] = $product->product_id;
-      $comments[] = sprintf("%dx %s",$line_item->quantity, check_plain($product->title));
+      $comments[] = sprintf("%dx %s", $line_item->quantity, check_plain($product->title));
     }
   }
   $request['products'] = implode(',', $products);

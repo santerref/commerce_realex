@@ -30,7 +30,7 @@ function commerce_realex_remote_commerce_payment_method_settings_form($settings 
   $form['shared_secret'] = [
     '#type' => 'textfield',
     '#title' => t('Shared secret'),
-    '#default_value' => isset($settings['shared_secret']) ?  $settings['shared_secret'] : '',
+    '#default_value' => isset($settings['shared_secret']) ? $settings['shared_secret'] : '',
     '#size' => 16,
     '#required' => TRUE,
   ];
@@ -39,7 +39,7 @@ function commerce_realex_remote_commerce_payment_method_settings_form($settings 
     '#type' => 'textfield',
     '#title' => t('Global Payments Remote XML URL'),
     '#description' => t('The Global Payments URL to submit the order to.'),
-    '#default_value' => isset($settings['remote_url']) ?  $settings['remote_url'] : 'https://epage.payandshop.com/epage-remote.cgi',
+    '#default_value' => isset($settings['remote_url']) ? $settings['remote_url'] : 'https://epage.payandshop.com/epage-remote.cgi',
     '#size' => 50,
     '#required' => TRUE,
   ];
@@ -97,7 +97,7 @@ function commerce_realex_remote_commerce_payment_method_settings_form($settings 
     '#type' => 'select',
     '#title' => t('Payment action'),
     '#options' => [1 => t('Authorize and Capture'), 0 => t('Authorize only')],
-    '#default_value' => isset($settings['auto_settle']) ?  $settings['auto_settle'] : 1,
+    '#default_value' => isset($settings['auto_settle']) ? $settings['auto_settle'] : 1,
     '#required' => TRUE,
   ];
 
@@ -105,11 +105,10 @@ function commerce_realex_remote_commerce_payment_method_settings_form($settings 
     '#type' => 'textfield',
     '#title' => t('Variable reference'),
     '#description' => t('Any reference you also would like to assign to the customer. This can allow checking, using realscore, of previous transactions by this customer.'),
-    '#default_value' => isset($settings['varref']) ?  $settings['varref'] : '',
+    '#default_value' => isset($settings['varref']) ? $settings['varref'] : '',
     '#size' => 50,
     '#required' => FALSE,
   ];
-
 
   /*
   $form['dcc_provider'] = [
@@ -117,7 +116,7 @@ function commerce_realex_remote_commerce_payment_method_settings_form($settings 
     '#title' => t('Direct Currency Conversion (DCC)'),
     '#options' => [
       'none' => 'None',
-      //'fintrax' => 'Fintrax', Not available yet
+      // 'fintrax' => 'Fintrax', Not available yet
       'fexco' => 'Fexco',
       'euroConex' => 'Elavon',
      ],
@@ -244,7 +243,7 @@ function commerce_realex_remote_commerce_payment_method_submit_form_submit($paym
   drupal_alter('commerce_realex_varref', $request['varref'], $order);
   $request['varref'] = check_plain($request['varref']);
 
-  $request['3dsecure'] = (module_exists('commerce_3d_secure') ?  $payment_method['settings']['3dsecure']: 0);
+  $request['3dsecure'] = (module_exists('commerce_3d_secure') ? $payment_method['settings']['3dsecure']: 0);
 
   //$request['dcc_provider'] = $payment_method['settings']['dcc_provider'];
 
@@ -273,7 +272,7 @@ function commerce_realex_remote_commerce_payment_method_submit_form_submit($paym
       $request['billing']['customer_name'] = check_plain($address['name_line']);
     }
     elseif (isset($address['first_name'])) {
-      $request['billing']['customer_name'] = check_plain($address['first_name'] . ' ' .  $address['last_name']);
+      $request['billing']['customer_name'] = check_plain($address['first_name'] . ' ' . $address['last_name']);
     }
     $request['billing']['street_one'] = isset($address['thoroughfare']) ? check_plain($address['thoroughfare']) : '';
     $request['billing']['postcode'] = isset($address['postal_code']) ? check_plain($address['postal_code']) : '';
@@ -297,7 +296,7 @@ function commerce_realex_remote_commerce_payment_method_submit_form_submit($paym
       $request['shipping']['customer_name'] = check_plain($address['name_line']);
     }
     elseif (isset($address['first_name'])) {
-      $request['shipping']['customer_name'] = check_plain($address['first_name'] . ' ' .  $address['last_name']);
+      $request['shipping']['customer_name'] = check_plain($address['first_name'] . ' ' . $address['last_name']);
     }
     $request['shipping']['street_one'] = isset($address['thoroughfare']) ? check_plain($address['thoroughfare']) : '';
     $request['shipping']['postcode'] = isset($address['postal_code']) ? check_plain($address['postal_code']) : '';
@@ -325,7 +324,7 @@ function commerce_realex_remote_commerce_payment_method_submit_form_submit($paym
     if (in_array($line_item->type, commerce_product_line_item_types())) {
       $product = $line_item_wrapper->commerce_product->value();
       $products[] = $product->product_id;
-      $comments[] = sprintf("%dx %s",$line_item->quantity, check_plain($product->title));
+      $comments[] = sprintf("%dx %s", $line_item->quantity, check_plain($product->title));
     }
   }
 
@@ -356,8 +355,6 @@ function commerce_realex_remote_commerce_payment_method_submit_form_submit($paym
     }
     commerce_realex_remote_do_auth_request($payment_method, $request, $order);
   }
-
-  return;
 }
 
 /**
@@ -436,12 +433,12 @@ function commerce_realex_remote_get_dcc_offer($payment_method, $pane_values, &$o
   // TODO - review.
   // You can use any alphanumeric combination for the orderid.
   // Although each transaction must have a unique orderid.
-/*
+  /*
   $orderid = $order->order_id;
   if (isset($_SESSION['realex_failures'])) {
     $orderid = $orderid . '-' . $_SESSION['realex_failures'];
   }
-*/
+  */
 
   $request['order_number'] = $order->order_number;
   $request['orderid'] = $order->order_id . '-' . $request['timestamp'];
@@ -539,15 +536,15 @@ function commerce_realex_remote_get_dcc_offer($payment_method, $pane_values, &$o
 /**
  * Process the Global Payments response.
  *
- * @param $type
+ * @param string $type
  *   Message response type.
- * @param $response
+ * @param array $response
  *   Parsed response as an array.
- * @param $request
+ * @param array $request
  *   Transaction details array.
- * @param $order
+ * @param object $order
  *   Commerce order object.
- * @param $payment_method
+ * @param array $payment_method
  *   Payment method array.
  */
 function _commerce_realex_remote_verify_response($type, $request, &$response, $order, $payment_method) {
@@ -566,7 +563,8 @@ function _commerce_realex_remote_verify_response($type, $request, &$response, $o
     return FALSE;
   }
   $pasref = isset($response['pasref']) ? $response['pasref'] : '';
-  $authcode = isset($response['authcode']) ? $response['authcode'] : ''; // Needed for Fexco DCC.
+  // Needed for Fexco DCC.
+  $authcode = isset($response['authcode']) ? $response['authcode'] : '';
 
   // This digital signature should correspond to the one Global Payments returns
   // and can therefore be used to verify the message Global Payments sends back.
@@ -577,7 +575,7 @@ function _commerce_realex_remote_verify_response($type, $request, &$response, $o
 
   $success = FALSE;
 
-  // Check to see if hashes match or not
+  // Check to see if hashes match or not.
   if ($sha1hash != $response['sha1hash']) {
     watchdog('commerce_realex', 'Hash match failed for order @order_id.', ['@order_id' => $response['orderid']]);
     drupal_set_message(t("Hashes don't match - response not authenticated!"), 'error');
@@ -594,20 +592,24 @@ function _commerce_realex_remote_verify_response($type, $request, &$response, $o
 }
 
 /**
- * Generate xml
+ * Generate xml.
  *
  * @param request
- *     An array with all the transaction data.
+ *   An array with all the transaction data.
  */
 function _commerce_realex_remote_build_xml_request($request, $type) {
   module_load_include('inc', 'commerce_realex', 'includes/commerce_realex_remote_3dsecure');
+
   switch ($type) {
     case 'dccrate':
       return _commerce_realex_remote_build_xml_request_dccrate($request);
+
     case '3ds-verifysig':
       return _commerce_realex_remote_build_xml_request_3dsecure_verifysig($request);
+
     case '3ds-verifyenrolled':
       return _commerce_realex_remote_build_xml_request_3dsecure_verifyenrolled($request);
+
     case 'auth':
     default:
       return _commerce_realex_remote_build_xml_request_auth($request);
@@ -637,14 +639,14 @@ function _commerce_realex_remote_build_xml_request_auth($request) {
   $xml .= "
     </card>";
   if (isset($request['cvn'])) {
-    $xml .="
+    $xml .= "
     <cvn>
       <number>" . $request['cvn'] . "</number>
       <presind>1</presind>
     </cvn>";
   }
   if (isset($request['dcc'])) {
-    $xml .="
+    $xml .= "
     <dccinfo>
       <ccp>" . $request['dcc_provider'] . "</ccp>
       <type>1</type>
@@ -665,7 +667,7 @@ function _commerce_realex_remote_build_xml_request_auth($request) {
     </comments>";
   }
   if (!empty($request['3dsecure']) && module_exists('commerce_3d_secure')) {
-    $xml .="
+    $xml .= "
     <mpi>";
     if (isset($request['cavv'])) {
       $xml .= "
@@ -679,14 +681,14 @@ function _commerce_realex_remote_build_xml_request_auth($request) {
       $xml .= "
       <eci>" . $request['eci'] . "</eci>";
     }
-    $xml .="
+    $xml .= "
     </mpi>";
   }
   $xml .= "
     <autosettle flag='" . $request['auto_settle'] . "'/>
     <sha1hash>" . $request['sha1hash'] . "</sha1hash>
     <tssinfo>";
-  $xml .=  "
+  $xml .= "
       <custipaddress>" . $request['ip_address'] . "</custipaddress>";
   if (!empty($request['billing'])) {
     $xml .= "
@@ -703,7 +705,7 @@ function _commerce_realex_remote_build_xml_request_auth($request) {
       </address>";
   }
   if (!empty($request['customer_id'])) {
-      $xml .= "
+    $xml .= "
       <custnum>" . $request['customer_id'] . "</custnum>";
   }
   if (!empty($request['products'])) {
@@ -714,7 +716,7 @@ function _commerce_realex_remote_build_xml_request_auth($request) {
     $xml .= "
       <varref>" . $request['varref'] . "</varref>";
   }
-  $xml .="
+  $xml .= "
     </tssinfo>
   </request>";
 
@@ -748,17 +750,16 @@ function _commerce_realex_remote_build_xml_request_dccrate($request) {
   return $xml;
 }
 
-
 /**
  * Save the transaction and update the order.
  *
- * @param $payment_method
+ * @param array $payment_method
  *   Payment method array.
- * @param $order
+ * @param object $order
  *   Commerce order object.
- * @param $response
+ * @param array $response
  *   Response data.
- * @param $log
+ * @param string $log
  *   Optional extra log message.
  */
 function commerce_realex_remote_transaction_save($transaction_type, $payment_method, $order, $response, $log = '') {

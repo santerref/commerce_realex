@@ -2,7 +2,8 @@
 
 /**
  * @file
- * Integrate Global Payments (formerly Realex Payments) gateway with Drupal Commerce.
+ * Integrate Global Payments (formerly Realex Payments) gateway with Drupal
+ * Commerce.
  */
 
 /**
@@ -26,7 +27,8 @@ function commerce_realex_menu() {
     'file' => 'includes/commerce_realex_remote_3dsecure.inc',
   ];
 
-  // Path to receive redirect user back to after Global Payments payment is finished.
+  // Path to receive redirect user back to after Global Payments payment is
+  // finished.
   $items['commerce-realex/redirect/complete'] = [
     'page callback' => 'commerce_realex_redirect_checkout_complete',
     'page arguments' => [],
@@ -134,11 +136,12 @@ function commerce_realex_commerce_checkout_router($order, $checkout_page) {
 /**
  * Send the request to Global Payments.
  *
- * @param $url
+ * @param string $url
  *   URL to send the request to.
- * @param $data
+ * @param array $data
  *   XML request message to send.
- * @return
+ *
+ * @return object
  *   Parsed response object.
  */
 function _commerce_realex_send_request($url, $data, $verify_ssl) {
@@ -157,7 +160,7 @@ function _commerce_realex_send_request($url, $data, $verify_ssl) {
   $response = preg_replace("/[\n\r]/", '', $response);
 
   // Parse the XML response.
-  $response_obj = new RealexParser($response);
+  $response_obj = new CommerceRealexParser($response);
   $result = $response_obj->record;
 
   return $result;
@@ -200,25 +203,29 @@ function _commerce_realex_build_request_sha1hash($request, $type = 'auth') {
 /**
  * Map card types to codes expected by Global Payments.
  *
- * @param $card
+ * @param string $card
  *   Card name.
- * @param $number
+ * @param int $number
  *   Card number - needed for checking bin ranges.
+ *
  * @return
  *   Global Payments card type code.
  */
 function _commerce_realex_get_card_type($card, $number) {
-  $bin_range = substr($number, 0, 4);
   switch ($card) {
     case 'maestro':
     case 'mastercard':
       return 'MC';
+
     case 'amex':
       return 'AMEX';
+
     case 'laser':
       return 'LASER';
+
     case 'dc':
       return 'DINERS';
+
     case 'visa':
     case 'delta':
     default:
@@ -259,16 +266,14 @@ function _commerce_realex_get_module_versions() {
   return 'Drupal Commerce ' . $commerce_version . ' | Commerce Global Payments ' . $commerce_realex_version;
 }
 
-
 /**
  * Parse the response XML and create and object.
  *
  * Code below is based on sample code provided by Global Payments at
- * http://resource.realexpayments.com/m.php?ct=integration_oscode.php
+ * http://resource.realexpayments.com/m.php?ct=integration_oscode.php.
  */
-class RealexParser {
+class CommerceRealexParser {
 
-  // Initialise variables.
   var $parser;
   var $parentElements = [];
   var $currentElement = 0;
@@ -286,7 +291,8 @@ class RealexParser {
     xml_parser_free($this->parser);
   }
 
-  /* The "startElement()" function is called when an open element tag is found.
+  /**
+   * The "startElement()" function is called when an open element tag is found.
    * It creates a variable on the fly contructed of all the parent elements
    * joined together with an underscore. So the following xml:
    * <response><something>Owen</something></response>
@@ -312,11 +318,12 @@ class RealexParser {
     $this->currentElement = str_replace('response_', '', $this->currentElement);
   }
 
-  /* The "cDataHandler()" function is called when the parser encounters any text that's
-     not an element. Simply places the text found in the variable that
-     was last created. So using the XML example above the text "Owen"
-     would be placed in the variable $RESPONSE_SOMETHING
-  */
+  /**
+   * The "cDataHandler()" function is called when the parser encounters any text that's
+   * not an element. Simply places the text found in the variable that
+   * was last created. So using the XML example above the text "Owen"
+   * would be placed in the variable $RESPONSE_SOMETHING
+   */
   function cDataHandler($parser, $cdata) {
     if ( trim ( $cdata ) ) {
       if ($this->currentTSSCheck != 0) {
@@ -327,8 +334,10 @@ class RealexParser {
     }
   }
 
-  //  The "endElement()" function is called when the closing tag of an element is found.
-  //  Just removes that element from the array of parent elements.
+  /**
+   * The "endElement()" function is called when the closing tag of an element is found.
+   * Just removes that element from the array of parent elements.
+   */
   function endElement($parser, $name) {
     $this->currentTSSCheck = 0;
     array_pop($this->parentElements);
