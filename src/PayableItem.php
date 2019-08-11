@@ -2,26 +2,23 @@
 
 namespace Drupal\commerce_realex;
 
-// @todo ROAD-MAP use PayableItemInterface formally
-// use Drupal\commerce_realex\CrmPayableItemInterface;
+// @todo ROAD-MAP use PayableItemInterface formally.
+// use Drupal\commerce_realex\PayableItemInterface;
 
 /**
  * Represents a Payable Item.
- *
  */
 class PayableItem {
 
   /**
    * @var \Drupal\user\PrivateTempStore
-   *
    */
   protected $paymentTempStore;
 
-
   /**
-   * Array of key:value
+   * Array of key:value.
    *
-   * @var Array
+   * @var array
    *
    * @todo Use separate class members instead of an array?
    *
@@ -31,14 +28,11 @@ class PayableItem {
   protected $values;
 
   /**
-   * Constructor
-   *
+   * Constructor.
    */
   public function __construct() {
     // @todo Use dependency injection to obtain these services.
-    /** @var \Drupal\user\PrivateTempStore */
     $this->paymentTempStore = \Drupal::service('user.private_tempstore')->get('commerce_realex');
-
   }
 
   /**
@@ -67,7 +61,7 @@ class PayableItem {
       'values' => $this->values,
     ];
 
-    // Save it to private temp store under the UUID "payment object" key
+    // Save it to private temp store under the UUID "payment object" key.
     $this->paymentTempStore->set($uuid, $storage_data);
 
     return $uuid;
@@ -76,7 +70,7 @@ class PayableItem {
   /**
    * Retrieve a payable from Private User Temp Store.
    *
-   * @param $uuid
+   * @param string $uuid
    *   A UUID previously used to store data in the $paymentTempStore.
    *
    * @return Drupal\commerce_realex\PayableItem
@@ -85,13 +79,11 @@ class PayableItem {
    *   - formalize this in some interface, e.g. PayableItem
    */
   public static function createFromPaymentTempStore(string $uuid) {
-
     $payable = new static();
 
     $temp_item = $payable->paymentTempStore->get($uuid);
 
     // @todo validate that the $temp_item['class'] matches __CLASS__
-
     foreach ($temp_item['values'] as $key => $value) {
       $payable->setValue($key, $value);
     }
@@ -118,7 +110,7 @@ class PayableItem {
    * @param string $key
    *   A field key.
    *
-   * @return mixed $value
+   * @return mixed
    *   A value to set.
    */
   public function getValue($key) {
@@ -133,11 +125,10 @@ class PayableItem {
     if (isset($this->values['payable_amount'])) {
       // Global Payments payments wants cents not euros.
       $cents = $this->values['payable_amount'] * 100;
-      return (int)$cents;
+      return (int) $cents;
     }
     else {
       throw new \Exception('Amount not set.');
     }
   }
-
 }

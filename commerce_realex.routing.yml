@@ -35,4 +35,3 @@ commerce_realex.payment_retry:
     _controller: 'Drupal\commerce_realex\Controller\PaymentFailure::retryPayment'
   requirements:
     _permission: 'access content'
-

@@ -10,8 +10,8 @@ namespace Drupal\commerce_realex;
  *
  * @todo ROAD-MAP
  *   This is a sketch of the methods that will be useful for making a generic
- *   interface for payable items in the Website, not limited to licences & permits.
- *   In particular, classes implementing PayableItemInterface may have
+ *   interface for payable items in the Website, not limited to licences &
+ *   permits. In particular, classes implementing PayableItemInterface may have
  *   distinct machine-names for CRM relationship fields (permit-to-customer,
  *   payment-to-permit, etc.)
  *
@@ -69,7 +69,7 @@ interface PayableItemInterface {
   // public function getPayableItemFromTempStore($payable_item_id);
 
   /**
-   * Save a CrmPayableItem in temp store.
+   * Save a PayableItem in temp store.
    *
    * @return string
    *   UUID of payable_item_id in temp store.

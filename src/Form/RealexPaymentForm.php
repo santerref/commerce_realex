@@ -9,6 +9,8 @@ use Drupal\Core\Url;
 use Drupal\Core\Link;
 
 /**
+ * The Global Payments payment form displayed to end user.
+ *
  * @todo Does this actually need to be a FormBase?
  *   We arent submitting it to Drupal!
  *   Button is a html_tag <button>, not a FAPI submit.
@@ -27,7 +29,7 @@ class RealexPaymentForm extends FormBase {
   protected $payableItem;
 
   /**
-   * A UUID for a CrmPayableItemInterface object.
+   * A UUID for a PayableItemInterface object.
    *
    * @var string
    */
@@ -43,7 +45,7 @@ class RealexPaymentForm extends FormBase {
   /**
    * {@inheritdoc}
    */
-  public function buildForm(array $form, FormStateInterface $form_state, $payable_item_id = null) {
+  public function buildForm(array $form, FormStateInterface $form_state, $payable_item_id = NULL) {
 
     try {
       $this->payableItemId = $payable_item_id;
@@ -64,7 +66,7 @@ class RealexPaymentForm extends FormBase {
     $form_fields['summary'] = [
       '#type' => 'item',
       '#markup' => $currency_formatter->format($payable['payable_amount'], $payable['payable_currency']),
-      '#title' => $this->t('Summary:')
+      '#title' => $this->t('Summary:'),
     ];
     $pay_button_id = Html::getUniqueId('realex-pay-button');
 
@@ -93,8 +95,7 @@ class RealexPaymentForm extends FormBase {
     $form_buttons['commerce_realex_button']['cancel_link'] = $cancel_link;
     */
 
-
-    $form['wrapper'] =[
+    $form['wrapper'] = [
       '#type' => 'container',
       'content' => [
         'content-wrapper' => [
@@ -105,15 +106,15 @@ class RealexPaymentForm extends FormBase {
       ],
     ];
 
-    // prepare URLs which which rxp-js needs.
+    // Prepare URLs which which rxp-js needs.
     $request_url = Url::fromRoute('commerce_realex.payment_request',
-      [ 'payable_item_id' => $this->payableItemId ],
-      [ 'absolute' => TRUE ])
+      ['payable_item_id' => $this->payableItemId],
+      ['absolute' => TRUE])
       ->toString();
 
     $response_url = Url::fromRoute('commerce_realex.payment_response',
-      [ 'payable_item_id' => $this->payableItemId ],
-      [ 'absolute' => TRUE ])
+      ['payable_item_id' => $this->payableItemId],
+      ['absolute' => TRUE])
       ->toString();
 
     $form['#attached']['drupalSettings']['realexPaymentForm'] = [

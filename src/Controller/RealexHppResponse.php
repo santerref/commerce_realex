@@ -8,9 +8,8 @@ use com\realexpayments\hpp\sdk\RealexValidationException;
 use com\realexpayments\hpp\sdk\RealexException;
 use Drupal\Core\Controller\ControllerBase;
 use Drupal\Core\Routing\TrustedRedirectResponse;
-// @todo ROAD-MAP use CrmPayableItemInterface formally
-// use Drupal\commerce_realex\CrmPayableItemInterface;
-use Drupal\commerce_realex\CrmPaymentRecord;
+// @todo ROAD-MAP use PayableItemInterface formally
+// use Drupal\commerce_realex\PayableItemInterface;
 
 class RealexHppResponse extends ControllerBase {
 
@@ -20,7 +19,7 @@ class RealexHppResponse extends ControllerBase {
   protected $paymentTempStore;
 
   /**
-   * @var CrmPayableItemInterface
+   * @var PayableItemInterface
    */
   protected $payableItem;
 
@@ -41,9 +40,8 @@ class RealexHppResponse extends ControllerBase {
    */
   public function processResponse($payable_item_id) {
 
-
     try {
-      $this->payableItemId =  $payable_item_id;
+      $this->payableItemId = $payable_item_id;
       $this->paymentTempStore = \Drupal::service('user.private_tempstore')->get('commerce_realex');
       $payable_item_class = $this->paymentTempStore->get($payable_item_id)['class'];
       $this->payableItem = $payable_item_class::createFromPaymentTempStore($payable_item_id);
@@ -53,15 +51,15 @@ class RealexHppResponse extends ControllerBase {
     }
     $realex_config = $this->payableItem->getValue('realex_config');
 
-    // Parse the Global Payments response sent by the client-side library
+    // Parse the Global Payments response sent by the client-side library.
     $realexHpp = new RealexHpp($realex_config['realex_shared_secret']);
     $responseJson = $_POST['hppResponse'];
     try {
       $this->hppResponse = $realexHpp->responseFromJson($responseJson);
-      $result = $this->hppResponse->getResult(); // 00
-      $realex_message = $this->hppResponse->getMessage(); // [ test system ] Authorised
-      $authCode = $this->hppResponse->getAuthCode(); // 12345
-      $pasRef  = $this->hppResponse->getPasRef(); // 12345
+      $result = $this->hppResponse->getResult();
+      $realex_message = $this->hppResponse->getMessage();
+      $authCode = $this->hppResponse->getAuthCode();
+      $pasRef = $this->hppResponse->getPasRef();
       $supplementary_data = $this->hppResponse->getSupplementaryData();
     }
     catch (RealexValidationException $e) {
@@ -72,16 +70,15 @@ class RealexHppResponse extends ControllerBase {
     }
 
     // Get payable Item ID out of response supplementary data.
-    // We sent this to Global Payments in the request JSON, expect to get it back.
+    // We sent this to Global Payments in the request JSON, expect to get it
+    // back.
     $this->payableItemId = $supplementary_data['temporary_payable_item_id'];
 
     // Retrieve object representing temporary record from paymentTempStore.
     $payable_item_class = $this->paymentTempStore->get($this->payableItemId)['class'];
-    /* @var Drupal\commerce_realex\CrmPayableItemInterface */
     $this->payableItem = $payable_item_class::createFromPaymentTempStore($this->payableItemId);
 
-
-    // Check stuff is OK
+    // Check stuff is OK.
     if ($result == '00') {
 
       // Display a message.
@@ -98,27 +95,25 @@ class RealexHppResponse extends ControllerBase {
       $this->payableItem->saveTempStore($this->payableItemId);
 
       // Redirect the user to the "Successful Payment" callback.
-			$success_callback = 'commerce_payment.checkout.return';
-			return $this->redirect($success_callback,
-				[
-					'commerce_order' => $this->payableItem->getValue('commerce_order_id'),
-					'step' => 'payment',
-				],
-				['query' => ['payable_item_id' => $this->payableItemId],]
-			);
-
+      $success_callback = 'commerce_payment.checkout.return';
+      return $this->redirect($success_callback,
+        [
+          'commerce_order' => $this->payableItem->getValue('commerce_order_id'),
+          'step' => 'payment',
+        ],
+        ['query' => ['payable_item_id' => $this->payableItemId]]
+      );
     }
+
+    // Otherwise something went wrong with payment.
     else {
-    // otherwise something went wrong with payment
-
-    // @todo tell the user the outcome!
-    // get human-readable message from realex response
-    // take action based on which realex response we get
-    //  - invalid card details
-    //    - set message, redirect to payment form to attempt again?
-    //  - handle other types of failure, more specific?
-
-    // fallback message if no other remedial action has already been taken.
+      // @todo tell the user the outcome!
+      // Get human-readable message from realex response.
+      // Take action based on which realex response we get.
+      // - invalid card details
+      // - set message, redirect to payment form to attempt again?
+      // - handle other types of failure, more specific?
+      // Fallback message if no other remedial action has already been taken.
       // Store the response and redirect to callback.
       $this->paymentFailureTempStore = \Drupal::service('user.private_tempstore')->get('commerce_realex_failure');
       $this->paymentFailureTempStore->set('payment', $this->hppResponse);

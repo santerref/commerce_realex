@@ -9,6 +9,9 @@ use com\realexpayments\hpp\sdk\RealexException;
 use Drupal\Core\Controller\ControllerBase;
 use Symfony\Component\HttpFoundation\Response;
 
+/**
+ * Realex Hosted Payment Page (HPP) Request controller.
+ */
 class RealexHppRequest extends ControllerBase {
 
   /**
@@ -27,7 +30,7 @@ class RealexHppRequest extends ControllerBase {
   protected $payableItemId;
 
   /**
-   * Build a RealEx HPP request JSON object.
+   * Build a Realex HPP request JSON object.
    */
   public function buildJson($payable_item_id) {
 
@@ -44,18 +47,21 @@ class RealexHppRequest extends ControllerBase {
     $realex_config = $this->payableItem->getValue('realex_config');
     $supplementary_data = [
       'temporary_payable_item_id' => $this->payableItemId,
-			'HPP_CUSTOMER_FIRSTNAME' => $this->payableItem->getValue('given_name'),
-			'HPP_CUSTOMER_LASTNAME' => $this->payableItem->getValue('family_name')
+      'HPP_CUSTOMER_FIRSTNAME' => $this->payableItem->getValue('given_name'),
+      'HPP_CUSTOMER_LASTNAME' => $this->payableItem->getValue('family_name'),
     ];
     $hppRequest = (new HppRequest())
       ->addMerchantId($realex_config['realex_merchant_id'])
       ->addAccount($realex_config['realex_account'])
-      ->addAmount($this->payableItem->getPayableAmount())  // This is cents not Euros.
+      // This is cents not Euros.
+      ->addAmount($this->payableItem->getPayableAmount())
       ->addSupplementaryData($supplementary_data)
       ->addCurrency($this->payableItem->getValue('payable_currency'))
-      ->addOrderId($this->payableItemId) // This is the Temp Payable ID.
+      // This is the Temp Payable ID.
+      ->addOrderId($this->payableItemId)
       ->addCommentOne($this->payableItem->getValue('commerce_order_id'))
-      ->addCustomerNumber($this->payableItem->getValue('payable_uid')) // User's ID
+      // User ID.
+      ->addCustomerNumber($this->payableItem->getValue('payable_uid'))
       ->addAutoSettleFlag(TRUE);
 
     $realexHpp = new RealexHpp($realex_config['realex_shared_secret']);
@@ -78,4 +84,6 @@ class RealexHppRequest extends ControllerBase {
     }
 
   }
+
 }
+

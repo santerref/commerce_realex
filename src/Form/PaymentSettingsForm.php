@@ -6,6 +6,9 @@ use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
 
+/**
+ * Payment settings form for Realex Redirect / HPP.
+ */
 class PaymentSettingsForm extends ConfigFormBase {
 
   /**
@@ -16,7 +19,7 @@ class PaymentSettingsForm extends ConfigFormBase {
   protected $config;
 
   /**
-   * LimericSugarCrmSettingsForm constructor.
+   * PaymentSettingsForm constructor.
    *
    * @param \Drupal\Core\Config\ConfigFactoryInterface $config_factory
    *   The factory for configuration objects.
@@ -41,26 +44,26 @@ class PaymentSettingsForm extends ConfigFormBase {
 
     $config = $this->config('commerce_realex.settings');
 
-    $form['realex_server_url'] = array(
+    $form['realex_server_url'] = [
       '#type' => 'url',
       '#title' => $this->t('Global Payments Server URL for payment requests'),
       '#default_value' => $config->get('realex_server_url'),
       '#required' => TRUE,
-    );
+    ];
 
-    $form['realex_merchant_id'] = array(
+    $form['realex_merchant_id'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Global Payments Merchant ID'),
       '#default_value' => $config->get('realex_merchant_id'),
       '#required' => TRUE,
-    );
+    ];
 
-    $form['realex_shared_secret'] = array(
+    $form['realex_shared_secret'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Global Payments Shared Secret'),
       '#default_value' => $config->get('realex_shared_secret'),
       '#required' => TRUE,
-    );
+    ];
 
     return $form;
   }

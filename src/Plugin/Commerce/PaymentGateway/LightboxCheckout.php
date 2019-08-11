@@ -26,15 +26,21 @@ use Symfony\Component\HttpFoundation\Request;
  */
 class LightboxCheckout extends OffsitePaymentGatewayBase {
 
-	public function defaultConfiguration() {
-	return [
-			'realex_server_url' => '',
-			'realex_account' => '',
-			'realex_shared_secret' => '',
-			'realex_merchant_id' => '',
-		] + parent::defaultConfiguration();
-	}
+  /**
+   * Initialise default configuration.
+   */
+  public function defaultConfiguration() {
+    return [
+      'realex_server_url' => '',
+      'realex_account' => '',
+      'realex_shared_secret' => '',
+      'realex_merchant_id' => '',
+    ] + parent::defaultConfiguration();
+  }
 
+  /**
+   * Build the configuration form.
+   */
   public function buildConfigurationForm(array $form, FormStateInterface $form_state) {
     $form = parent::buildConfigurationForm($form, $form_state);
 
@@ -73,7 +79,10 @@ class LightboxCheckout extends OffsitePaymentGatewayBase {
     return $form;
   }
 
-	public function submitConfigurationForm(array &$form, FormStateInterface $form_state) {
+  /**
+   * Submission handle for configuration form.
+   */
+  public function submitConfigurationForm(array &$form, FormStateInterface $form_state) {
     parent::submitConfigurationForm($form, $form_state);
     if (!$form_state->getErrors()) {
       $values = $form_state->getValue($form['#parents']);
@@ -84,11 +93,14 @@ class LightboxCheckout extends OffsitePaymentGatewayBase {
     }
   }
 
-	public function onReturn(OrderInterface $order, Request $request) {
-		// Get Payment ID from Request.
-		$payable_item_id = $request->query->get('payable_item_id');
+  /**
+   * Process the payment response.
+   */
+  public function onReturn(OrderInterface $order, Request $request) {
+    // Get Payment ID from Request.
+    $payable_item_id = $request->query->get('payable_item_id');
     try {
-      $this->payableItemId =  $payable_item_id;
+      $this->payableItemId = $payable_item_id;
       $this->paymentTempStore = \Drupal::service('user.private_tempstore')->get('commerce_realex');
       $payable_item_class = $this->paymentTempStore->get($payable_item_id)['class'];
       $this->payableItem = $payable_item_class::createFromPaymentTempStore($payable_item_id);
@@ -96,9 +108,9 @@ class LightboxCheckout extends OffsitePaymentGatewayBase {
     catch (\Exception $e) {
       \Drupal::logger('commerce_realex')->error($e->getMessage());
     }
-		// Only Process completed Payments.
+    // Only Process completed Payments.
     if ($this->payableItem->getValue('payment_complete') !== TRUE) {
-        throw new PaymentGatewayException('Payment failed!');
+      throw new PaymentGatewayException('Payment failed!');
     }
 
     $payment_storage = $this->entityTypeManager->getStorage('commerce_payment');
@@ -112,5 +124,6 @@ class LightboxCheckout extends OffsitePaymentGatewayBase {
     ]);
 
     $payment->save();
-	}
+  }
+
 }

@@ -9,20 +9,25 @@ use Symfony\Component\HttpFoundation\Request;
 use Drupal\Core\Url;
 use Drupal\commerce_realex\PayableItem;
 
+/**
+ * Realex Redirect checkout form.
+ */
 class RedirectCheckoutForm extends PaymentOffsiteForm {
 
+  /**
+   * Build the configuration form.
+   */
   public function buildConfigurationForm(array $form, FormStateInterface $form_state) {
     $form = parent::buildConfigurationForm($form, $form_state);
 
-    /** @var \Drupal\commerce_payment\Entity\PaymentInterface $payment */
     $payment = $this->entity;
-		$order = $payment->getOrder();
-		$profile = $order->getBillingProfile();
-		$address =  $order->getBillingProfile()->get('address')->first();
+    $order = $payment->getOrder();
+    $profile = $order->getBillingProfile();
+    $address = $order->getBillingProfile()->get('address')->first();
     $entity_type_manager = \Drupal::service('entity_type.manager');
     $currency_code = $payment->getAmount()->getCurrencyCode();
     $currency = $entity_type_manager->getStorage('commerce_currency')->load($currency_code);
-    $currency_symbol =  $currency->getSymbol();
+    $currency_symbol = $currency->getSymbol();
 
     $plugin = $payment->getPaymentGateway()->getPlugin();
 
@@ -33,7 +38,7 @@ class RedirectCheckoutForm extends PaymentOffsiteForm {
     $payable->setValue('payable_currency_symbol', $currency_symbol);
     $payable->setValue('given_name', $address->getGivenName());
     $payable->setValue('family_name', $address->getFamilyName());
-		$payable->setValue('commerce_order_id', $order->id());
+    $payable->setValue('commerce_order_id', $order->id());
     $payable->setValue('realex_config', $plugin->getConfiguration());
 
     $data = [];
@@ -50,4 +55,5 @@ class RedirectCheckoutForm extends PaymentOffsiteForm {
       PaymentOffsiteForm::REDIRECT_POST
     );
   }
+
 }

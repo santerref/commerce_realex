@@ -14,4 +14,3 @@ Installation
  - Download and enable the module
  - Go to the payment methods settings page at admin/commerce/config/payment-gateways
  - Select "Add Payment Gateway" and add the Global Payments details
-
