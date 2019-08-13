@@ -330,7 +330,7 @@ function commerce_realex_remote_commerce_payment_method_submit_form_submit($paym
 
   $request['products'] = implode(',', $products);
   $request['comments'][0] = t('Products purchased:') . ' ' . implode(', ', $comments);
-  $request['comments'][1] = _commerce_realex_get_module_versions();
+  $request['comments'][1] = 'drupalcommerce7';
   $request['log_message'] = '';
 
   // Build sha1 hash.

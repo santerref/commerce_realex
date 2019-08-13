@@ -73,7 +73,7 @@ function commerce_realex_redirect_commerce_payment_method_settings_form($setting
     '#type' => 'select',
     '#title' => t('Payment action'),
     '#options' => [1 => t('Authorize and Capture'), 0 => t('Authorize only')],
-    '#default_value' => isset($settings['auto_settle'])   $settings['auto_settle'] : 1,
+    '#default_value' => isset($settings['auto_settle']) ? $settings['auto_settle'] : 1,
     '#required' => TRUE,
   ];
 
@@ -173,12 +173,11 @@ function commerce_realex_redirect_redirect_form($form, &$form_state, $order, $pa
     $data['PROD_ID'] = $request['products'];
   }
   if (!empty($request['comments']) && is_array($request['comments'])) {
-    $data['COMMENT1'] = $request['comments'][0];
-    if (strlen($data['COMMENT1']) > 255) {
-      $data['COMMENT1'] = substr($data['COMMENT1'], 0, 252) . '...';
+    $data['COMMENT2'] = $request['comments'][0];
+    if (strlen($data['COMMENT2']) > 255) {
+      $data['COMMENT2'] = substr($data['COMMENT1'], 0, 252) . '...';
     }
   }
-//  $data['COMMENT2'] = _commerce_realex_get_module_versions();
 
   $additional_hpp_data = [
     "HPP_VERSION"        => 2,
