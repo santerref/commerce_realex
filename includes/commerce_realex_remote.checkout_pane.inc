@@ -1,10 +1,15 @@
 <?php
 
 /**
+ * @file
+ * Checkout pane form for Commerce Realex.
+ */
+
+/**
  * Implements hook_checkout_form().
  */
 function commerce_realex_remote_dcc_pane_checkout_form($form, &$form_state, $checkout_pane, $order) {
-  $pane_form = array();
+  $pane_form = [];
 
   // Don't display this checkout pane if the payment method isn't Realex
   // Payments Remote.
@@ -17,25 +22,25 @@ function commerce_realex_remote_dcc_pane_checkout_form($form, &$form_state, $che
   if ($payment_method['settings']['dcc_provider'] != 'none' && !empty($order->data['commerce_realex_dcc_message'])) {
     $dcc_message = $order->data['commerce_realex_dcc_message'];
 
-    $form['dcc'] = array(
+    $form['dcc'] = [
       '#type' => 'fieldset',
       '#title' => t('Direct Currency Conversion'),
       '#collapsible' => FALSE,
       '#weight' => 10,
-    );
+    ];
 
-    $pane_form['dcc_message'] = array(
+    $pane_form['dcc_message'] = [
       '#type' => 'markup',
       '#markup' => '<p>' . $dcc_message . '</p>',
       '#prefix' => '<div id="dcc-info">',
       '#suffix' => '</div>',
-    );
+    ];
 
-    $pane_form['dcc_accept'] = array(
+    $pane_form['dcc_accept'] = [
       '#type' => 'checkbox',
       '#title' => t('Yes - charge me in my own currency'),
       '#required' => FALSE,
-    );
+    ];
   }
 
   return $pane_form;
@@ -49,7 +54,7 @@ function commerce_realex_remote_dcc_pane_checkout_form_submit($form, &$form_stat
     return;
   }
 
-return;
+  return;
   // TODO: get $pane_values['credit_card']
   $payment_method = commerce_payment_method_instance_load($order->data['payment_method']);
 
@@ -59,7 +64,7 @@ return;
   }
   $expiry_date = sprintf("%02d%02d", $pane_values['credit_card']['exp_month'], substr($pane_values['credit_card']['exp_year'], -2));
 
-  $request = array();
+  $request = [];
   $request['timestamp'] = strftime('%Y%m%d%H%M%S');
   mt_srand((double) microtime() * 1000000);
 
@@ -90,7 +95,7 @@ return;
       $request['billing']['customer_name'] = check_plain($address['name_line']);
     }
     elseif (isset($address['first_name'])) {
-      $request['billing']['customer_name'] = check_plain($address['first_name'] . ' ' .  $address['last_name']);
+      $request['billing']['customer_name'] = check_plain($address['first_name'] . ' ' . $address['last_name']);
     }
     $request['billing']['street_one'] = isset($address['thoroughfare']) ? check_plain($address['thoroughfare']) : '';
     $request['billing']['postcode'] = isset($address['postal_code']) ? check_plain($address['postal_code']) : '';
@@ -110,7 +115,7 @@ return;
       $request['shipping']['customer_name'] = check_plain($address['name_line']);
     }
     elseif (isset($address['first_name'])) {
-      $request['shipping']['customer_name'] = check_plain($address['first_name'] . ' ' .  $address['last_name']);
+      $request['shipping']['customer_name'] = check_plain($address['first_name'] . ' ' . $address['last_name']);
     }
     $request['shipping']['street_one'] = isset($address['thoroughfare']) ? check_plain($address['thoroughfare']) : '';
     $request['shipping']['postcode'] = isset($address['postal_code']) ? check_plain($address['postal_code']) : '';
@@ -126,8 +131,8 @@ return;
   $request['ip_address'] = ($request['ip_address'] == '::1') ? '127.0.0.1' : $request['ip_address'];
 
   // Get products purchased.
-  $products = array();
-  $comments = array();
+  $products = [];
+  $comments = [];
   $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
   foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
     $line_item = $line_item_wrapper->value();
@@ -135,7 +140,7 @@ return;
     if (in_array($line_item->type, commerce_product_line_item_types())) {
       $product = $line_item_wrapper->commerce_product->value();
       $products[] = $product->product_id;
-      $comments[] = sprintf("%dx %s",$line_item->quantity, check_plain($product->title));
+      $comments[] = sprintf("%dx %s", $line_item->quantity, check_plain($product->title));
     }
   }
   $request['products'] = implode(',', $products);

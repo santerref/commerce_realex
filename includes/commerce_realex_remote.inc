@@ -2,164 +2,163 @@
 
 /**
  * @file
- * Callback methods for Realex Payments Remote integration.
+ * Callback methods for Global Payments Remote integration.
  */
 
 /**
  * Implements hook_commerce_payment_method_settings_form().
  */
 function commerce_realex_remote_commerce_payment_method_settings_form($settings = NULL) {
-  $form = array();
+  $form = [];
 
-  $form['merchant_id'] = array(
+  $form['merchant_id'] = [
     '#type' => 'textfield',
-    '#title' => t('Realex Payments Merchant ID'),
+    '#title' => t('Global Payments Merchant ID'),
     '#default_value' => isset($settings['merchant_id']) ? $settings['merchant_id'] : '',
     '#size' => 16,
     '#required' => TRUE,
-  );
+  ];
 
-  $form['account_id'] = array(
+  $form['account_id'] = [
     '#type' => 'textfield',
-    '#title' => t('Realex Payments Account ID'),
+    '#title' => t('Global Payments Account ID'),
     '#default_value' => isset($settings['account_id']) ? $settings['account_id'] : '',
     '#size' => 16,
     '#required' => FALSE,
-  );
+  ];
 
-  $form['shared_secret'] = array(
+  $form['shared_secret'] = [
     '#type' => 'textfield',
     '#title' => t('Shared secret'),
-    '#default_value' => isset($settings['shared_secret']) ?  $settings['shared_secret'] : '',
+    '#default_value' => isset($settings['shared_secret']) ? $settings['shared_secret'] : '',
     '#size' => 16,
     '#required' => TRUE,
-  );
+  ];
 
-  $form['remote_url'] = array(
+  $form['remote_url'] = [
     '#type' => 'textfield',
-    '#title' => t('Realex Payments Remote XML URL'),
-    '#description' => t('The Realex Payments URL to submit the order to.'),
-    '#default_value' => isset($settings['remote_url']) ?  $settings['remote_url'] : 'https://epage.payandshop.com/epage-remote.cgi',
+    '#title' => t('Global Payments Remote XML URL'),
+    '#description' => t('The Global Payments URL to submit the order to.'),
+    '#default_value' => isset($settings['remote_url']) ? $settings['remote_url'] : 'https://epage.payandshop.com/epage-remote.cgi',
     '#size' => 50,
     '#required' => TRUE,
-  );
+  ];
 
-  $form['verify_ssl'] = array(
+  $form['verify_ssl'] = [
     '#type' => 'checkbox',
-    '#title' => t("Verify Realex's SSL certificate"),
+    '#title' => t("Verify Global's SSL certificate"),
     '#default_value' => isset($settings['verify_ssl']) ? $settings['verify_ssl'] : TRUE,
-  );
+  ];
 
   if (module_exists('commerce_3d_secure')) {
-    $form['3dsecure'] = array(
+    $form['3dsecure'] = [
       '#type' => 'checkbox',
       '#title' => t('Use 3D Secure'),
       '#default_value' => isset($settings['3dsecure']) ? $settings['3dsecure'] : 0,
-    );
+    ];
 
-    $form['3dsecure_remote_url'] = array(
+    $form['3dsecure_remote_url'] = [
       '#type' => 'textfield',
-      '#title' => t('Realex Payments 3D Secure XML URL'),
-      '#description' => t('The Realex Payments URL to submit the order to.'),
+      '#title' => t('Global Payments 3D Secure XML URL'),
+      '#description' => t('The Global Payments URL to submit the order to.'),
       '#default_value' => isset($settings['3dsecure_remote_url']) ? $settings['3dsecure_remote_url'] : 'https://epage.payandshop.com/epage-3dsecure.cgi',
       '#size' => 50,
       '#required' => TRUE,
-      '#states' => array(
-        'visible' => array(
-          ':input[name="parameter[payment_method][settings][payment_method][settings][3dsecure]"]' => array('checked' => TRUE),
-        ),
-      ),
-    );
+      '#states' => [
+        'visible' => [
+          ':input[name="parameter[payment_method][settings][payment_method][settings][3dsecure]"]' => ['checked' => TRUE],
+        ],
+      ],
+    ];
 
-    $form['3dsecure_require_liability_shift'] = array(
+    $form['3dsecure_require_liability_shift'] = [
       '#type' => 'checkbox',
       '#title' => t('Require liability shift where possible'),
       '#description' => t('If checked, transactions will only be attempted to be authorised if there is a liability shift away from the merchant. Note, not all card types, e.g. Laser, Amex, corporate VISA cards, support 3D Secure and for these the transaction will continue even though there is no liability shift available.'),
       '#default_value' => isset($settings['3dsecure_require_liability_shift']) ? $settings['3dsecure_require_liability_shift'] : 0,
-      '#states' => array(
-        'visible' => array(
-          ':input[name="parameter[payment_method][settings][payment_method][settings][3dsecure]"]' => array('checked' => TRUE),
-        ),
-      ),
-    );
+      '#states' => [
+        'visible' => [
+          ':input[name="parameter[payment_method][settings][payment_method][settings][3dsecure]"]' => ['checked' => TRUE],
+        ],
+      ],
+    ];
   }
   else {
-    $form['3dsecure'] = array(
+    $form['3dsecure'] = [
       '#type' => 'checkbox',
       '#title' => t('Use 3D Secure'),
       '#default_value' => 0,
-      '#attributes' => array('disabled' => 'disabled'),
-      '#description' => t('Enable the Commerce 3D Secure module if you wish to enable 3D Secure transactions for Realex Payments.'),
-    );
+      '#attributes' => ['disabled' => 'disabled'],
+      '#description' => t('Enable the Commerce 3D Secure module if you wish to enable 3D Secure transactions for Global Payments.'),
+    ];
   }
 
-  $form['auto_settle'] = array(
+  $form['auto_settle'] = [
     '#type' => 'select',
     '#title' => t('Payment action'),
-    '#options' => array(1 => t('Authorize and Capture'), 0 => t('Authorize only')),
-    '#default_value' => isset($settings['auto_settle']) ?  $settings['auto_settle'] : 1,
+    '#options' => [1 => t('Authorize and Capture'), 0 => t('Authorize only')],
+    '#default_value' => isset($settings['auto_settle']) ? $settings['auto_settle'] : 1,
     '#required' => TRUE,
-  );
+  ];
 
-  $form['varref'] = array(
+  $form['varref'] = [
     '#type' => 'textfield',
     '#title' => t('Variable reference'),
     '#description' => t('Any reference you also would like to assign to the customer. This can allow checking, using realscore, of previous transactions by this customer.'),
-    '#default_value' => isset($settings['varref']) ?  $settings['varref'] : '',
+    '#default_value' => isset($settings['varref']) ? $settings['varref'] : '',
     '#size' => 50,
     '#required' => FALSE,
-  );
-
+  ];
 
   /*
-  $form['dcc_provider'] = array(
+  $form['dcc_provider'] = [
     '#type' => 'select',
     '#title' => t('Direct Currency Conversion (DCC)'),
-    '#options' => array(
+    '#options' => [
       'none' => 'None',
-      //'fintrax' => 'Fintrax', Not available yet
+      // 'fintrax' => 'Fintrax', Not available yet
       'fexco' => 'Fexco',
       'euroConex' => 'Elavon',
-     ),
-    '#description' => t('Should DCC be available to the user? You must have this preconfigured on your Realex Payments sub-account in advance.'),
+     ],
+    '#description' => t('Should DCC be available to the user? You must have this preconfigured on your Global Payments sub-account in advance.'),
     '#default_value' => isset($settings['dcc_provider']) ? $settings['dcc_provider'] : 'none',
-  );
+  ];
   */
 
   $cctypes = _commerce_realex_supported_card_types();
-  $form['card_types'] = array(
+  $form['card_types'] = [
     '#type' => 'checkboxes',
     '#title' => t('Available card types'),
     '#options' => $cctypes,
-    '#default_value' => isset($settings['card_types']) ? $settings['card_types'] : array(),
+    '#default_value' => isset($settings['card_types']) ? $settings['card_types'] : [],
     '#required' => TRUE,
-  );
+  ];
 
-  $form['cctype_subaccounts_enabled'] = array(
+  $form['cctype_subaccounts_enabled'] = [
     '#type' => 'checkbox',
     '#title' => t('Use separate accounts for each card type'),
     '#description' => t('Some configurations require different accounts to be used for different card types.'),
-    '#default_value' => isset($settings['cctype_subaccounts_enabled']) ? $settings['cctype_subaccounts_enabled'] : array(),
-  );
+    '#default_value' => isset($settings['cctype_subaccounts_enabled']) ? $settings['cctype_subaccounts_enabled'] : [],
+  ];
 
-  $form['cctype_accounts'] = array(
+  $form['cctype_accounts'] = [
     '#type' => 'fieldset',
-    '#title' => t('Realex Payments card type account settings'),
+    '#title' => t('Global Payments card type account settings'),
     '#collapsible' => TRUE,
     '#collapsed' => FALSE,
-    '#states' => array(
-      'visible' => array(
-        ':input[name="parameter[payment_method][settings][payment_method][settings][cctype_subaccounts_enabled]"]' => array('checked' => TRUE),
-      ),
-    ),
-  );
+    '#states' => [
+      'visible' => [
+        ':input[name="parameter[payment_method][settings][payment_method][settings][cctype_subaccounts_enabled]"]' => ['checked' => TRUE],
+      ],
+    ],
+  ];
   foreach ($cctypes as $cctype => $label) {
-    $form['cctype_accounts'][$cctype] = array(
+    $form['cctype_accounts'][$cctype] = [
       '#type' => 'textfield',
-      '#title' => t('@cctype account', array('@cctype' => $label)),
+      '#title' => t('@cctype account', ['@cctype' => $label]),
       '#default_value' => !empty($settings['cctype_accounts'][$cctype]) ? $settings['cctype_accounts'][$cctype] : '',
       '#required' => FALSE,
-    );
+    ];
   }
 
   return $form;
@@ -177,14 +176,14 @@ function commerce_realex_remote_commerce_payment_method_submit_form($payment_met
   $card_types = array_intersect(array_keys($supported_card_types), $available_card_types);
 
   // Set which cards are available to the user.
-  $credit_card_settings = array(
+  $credit_card_settings = [
     'owner' => '',
     'type' => $card_types,
     'number' => '',
     'start_date' => NULL,
     'issue' => '',
     'code' => '',
-  );
+  ];
 
   // Get credit card fields.
   $form = commerce_payment_credit_card_form($credit_card_settings);
@@ -197,12 +196,12 @@ function commerce_realex_remote_commerce_payment_method_submit_form($payment_met
  *
  * Validate the credit card fields.
  */
-function commerce_realex_remote_commerce_payment_method_submit_form_validate($payment_method, $pane_form, $pane_values, $order, $form_parents = array()) {
+function commerce_realex_remote_commerce_payment_method_submit_form_validate($payment_method, $pane_form, $pane_values, $order, $form_parents = []) {
   module_load_include('inc', 'commerce_payment', 'includes/commerce_payment.credit_card');
 
-  $settings = array(
-    'form_parents' => array_merge($form_parents, array('credit_card')),
-  );
+  $settings = [
+    'form_parents' => array_merge($form_parents, ['credit_card']),
+  ];
   $prefix = implode('][', $settings['form_parents']) . '][';
 
   $card_type = $pane_values['credit_card']['type'];
@@ -227,7 +226,7 @@ function commerce_realex_remote_commerce_payment_method_submit_form_submit($paym
   }
   $expiry_date = sprintf("%02d%02d", $pane_values['credit_card']['exp_month'], substr($pane_values['credit_card']['exp_year'], -2));
 
-  $request = array();
+  $request = [];
   $request['timestamp'] = strftime('%Y%m%d%H%M%S');
   mt_srand((double) microtime() * 1000000);
 
@@ -244,7 +243,7 @@ function commerce_realex_remote_commerce_payment_method_submit_form_submit($paym
   drupal_alter('commerce_realex_varref', $request['varref'], $order);
   $request['varref'] = check_plain($request['varref']);
 
-  $request['3dsecure'] = (module_exists('commerce_3d_secure') ?  $payment_method['settings']['3dsecure']: 0);
+  $request['3dsecure'] = (module_exists('commerce_3d_secure') ? $payment_method['settings']['3dsecure']: 0);
 
   //$request['dcc_provider'] = $payment_method['settings']['dcc_provider'];
 
@@ -273,7 +272,7 @@ function commerce_realex_remote_commerce_payment_method_submit_form_submit($paym
       $request['billing']['customer_name'] = check_plain($address['name_line']);
     }
     elseif (isset($address['first_name'])) {
-      $request['billing']['customer_name'] = check_plain($address['first_name'] . ' ' .  $address['last_name']);
+      $request['billing']['customer_name'] = check_plain($address['first_name'] . ' ' . $address['last_name']);
     }
     $request['billing']['street_one'] = isset($address['thoroughfare']) ? check_plain($address['thoroughfare']) : '';
     $request['billing']['postcode'] = isset($address['postal_code']) ? check_plain($address['postal_code']) : '';
@@ -297,7 +296,7 @@ function commerce_realex_remote_commerce_payment_method_submit_form_submit($paym
       $request['shipping']['customer_name'] = check_plain($address['name_line']);
     }
     elseif (isset($address['first_name'])) {
-      $request['shipping']['customer_name'] = check_plain($address['first_name'] . ' ' .  $address['last_name']);
+      $request['shipping']['customer_name'] = check_plain($address['first_name'] . ' ' . $address['last_name']);
     }
     $request['shipping']['street_one'] = isset($address['thoroughfare']) ? check_plain($address['thoroughfare']) : '';
     $request['shipping']['postcode'] = isset($address['postal_code']) ? check_plain($address['postal_code']) : '';
@@ -316,8 +315,8 @@ function commerce_realex_remote_commerce_payment_method_submit_form_submit($paym
   $request['ip_address'] = ($request['ip_address'] == '::1') ? '127.0.0.1' : $request['ip_address'];
 
   // Get products purchased.
-  $products = array();
-  $comments = array();
+  $products = [];
+  $comments = [];
   $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
   foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
     $line_item = $line_item_wrapper->value();
@@ -325,13 +324,13 @@ function commerce_realex_remote_commerce_payment_method_submit_form_submit($paym
     if (in_array($line_item->type, commerce_product_line_item_types())) {
       $product = $line_item_wrapper->commerce_product->value();
       $products[] = $product->product_id;
-      $comments[] = sprintf("%dx %s",$line_item->quantity, check_plain($product->title));
+      $comments[] = sprintf("%dx %s", $line_item->quantity, check_plain($product->title));
     }
   }
 
   $request['products'] = implode(',', $products);
   $request['comments'][0] = t('Products purchased:') . ' ' . implode(', ', $comments);
-  $request['comments'][1] = _commerce_realex_get_module_versions();
+  $request['comments'][1] = 'drupalcommerce7';
   $request['log_message'] = '';
 
   // Build sha1 hash.
@@ -351,13 +350,11 @@ function commerce_realex_remote_commerce_payment_method_submit_form_submit($paym
   // Standard authorisation.
   else {
     if ($request['3dsecure']) {
-      watchdog('commerce_realex', 'Card does not support 3D Secure, no liability shift (orderid: @order_id)', array('@order_id' => $order->order_id));
+      watchdog('commerce_realex', 'Card does not support 3D Secure, no liability shift (orderid: @order_id)', ['@order_id' => $order->order_id]);
       $request['3dsecure'] = FALSE;
     }
     commerce_realex_remote_do_auth_request($payment_method, $request, $order);
   }
-
-  return;
 }
 
 /**
@@ -399,8 +396,8 @@ function commerce_realex_remote_do_auth_request($payment_method, $request, &$ord
   // Unsuccessful payments.
   else {
     // Payment failure.
-    drupal_set_message(t('We were unable to process your credit card payment; reason provided by bank: %message. If the problem persists, contact us to complete your order.', array('%message' => $response['message'])), 'warning');
-    watchdog('commerce_realex', 'Payment failed: %message', array('%message' => $response['message']), WATCHDOG_WARNING);
+    drupal_set_message(t('We were unable to process your credit card payment; reason provided by bank: %message. If the problem persists, contact us to complete your order.', ['%message' => $response['message']]), 'warning');
+    watchdog('commerce_realex', 'Payment failed: %message', ['%message' => $response['message']], WATCHDOG_WARNING);
 
     if (empty($_SESSION['realex_failures'])) {
       $_SESSION['realex_failures'] = 0;
@@ -420,7 +417,7 @@ function commerce_realex_remote_do_auth_request($payment_method, $request, &$ord
 }
 
 /**
- * Contact Realex Payments to get a DCC offer.
+ * Contact Global Payments to get a DCC offer.
  */
 function commerce_realex_remote_get_dcc_offer($payment_method, $pane_values, &$order, $charge) {
   $start_date = NULL;
@@ -429,19 +426,19 @@ function commerce_realex_remote_get_dcc_offer($payment_method, $pane_values, &$o
   }
   $expiry_date = sprintf("%02d%02d", $pane_values['credit_card']['exp_month'], substr($pane_values['credit_card']['exp_year'], -2));
 
-  $request = array();
+  $request = [];
   $request['timestamp'] = strftime('%Y%m%d%H%M%S');
   mt_srand((double) microtime() * 1000000);
 
   // TODO - review.
   // You can use any alphanumeric combination for the orderid.
   // Although each transaction must have a unique orderid.
-/*
+  /*
   $orderid = $order->order_id;
   if (isset($_SESSION['realex_failures'])) {
     $orderid = $orderid . '-' . $_SESSION['realex_failures'];
   }
-*/
+  */
 
   $request['order_number'] = $order->order_number;
   $request['orderid'] = $order->order_id . '-' . $request['timestamp'];
@@ -502,13 +499,13 @@ function commerce_realex_remote_get_dcc_offer($payment_method, $pane_values, &$o
     $order->data['cardholderrate'] = $cardholderrate;
     $order->data['has_dcc_offer'] = TRUE;
 
-    $currency_names = array(
+    $currency_names = [
       'AUD' => t('Austalian Dollars'),
       'GBP' => t('Pounds Sterling'),
       'USD' => t('US Dollars'),
       'CHF' => t('Swiss Francs'),
       'EUR' => t('Euro'),
-    );
+    ];
 
     // Use human friendly names if we have them.
     if ($currency_names[$cardholdercurrency]) {
@@ -518,41 +515,41 @@ function commerce_realex_remote_get_dcc_offer($payment_method, $pane_values, &$o
       $merchantcurrency = $currency_names[$merchantcurrency];
     }
 
-    $message = t('We notice that your credit card is in @currency.', array('@currency' => $cardholdercurrency)) . '<br />';
-    $message .= t('For your convenience you can opt to have this transaction charged as <br />@cardholderamountdisplay @cardholdercurrency (at an exchange rate of 1.00 @merchantcurrency = @cardholderrate @cardholdercurrency)', array(
+    $message = t('We notice that your credit card is in @currency.', ['@currency' => $cardholdercurrency]) . '<br />';
+    $message .= t('For your convenience you can opt to have this transaction charged as <br />@cardholderamountdisplay @cardholdercurrency (at an exchange rate of 1.00 @merchantcurrency = @cardholderrate @cardholdercurrency)', [
       '@cardholderamountdisplay' => $cardholderamountdisplay,
       '@cardholdercurrency' => $cardholdercurrency,
       '@merchantcurrency' => $merchantcurrency,
       '@cardholderrate' => $cardholderrate,
       '@cardholdercurrency' => $cardholdercurrency,
-    ));
+    ]);
     $order->data['commerce_realex_dcc_message'] = $message;
   }
 
   else {
-    watchdog('commerce_realex', 'DCC offer failed: %message', array('%message' => $response['message']), WATCHDOG_WARNING);
+    watchdog('commerce_realex', 'DCC offer failed: %message', ['%message' => $response['message']], WATCHDOG_WARNING);
   }
 
   return $success;
 }
 
 /**
- * Process the Realex Payments response.
+ * Process the Global Payments response.
  *
- * @param $type
+ * @param string $type
  *   Message response type.
- * @param $response
+ * @param array $response
  *   Parsed response as an array.
- * @param $request
+ * @param array $request
  *   Transaction details array.
- * @param $order
+ * @param object $order
  *   Commerce order object.
- * @param $payment_method
+ * @param array $payment_method
  *   Payment method array.
  */
 function _commerce_realex_remote_verify_response($type, $request, &$response, $order, $payment_method) {
   if (!isset($response['result'])) {
-    watchdog('commerce_realex', 'No results code, something has gone wrong with the transaction.', array(), WATCHDOG_ERROR);
+    watchdog('commerce_realex', 'No results code, something has gone wrong with the transaction.', [], WATCHDOG_ERROR);
     drupal_goto('checkout/' . $order->order_id . '/payment');
   }
 
@@ -566,10 +563,11 @@ function _commerce_realex_remote_verify_response($type, $request, &$response, $o
     return FALSE;
   }
   $pasref = isset($response['pasref']) ? $response['pasref'] : '';
-  $authcode = isset($response['authcode']) ? $response['authcode'] : ''; // Needed for Fexco DCC.
+  // Needed for Fexco DCC.
+  $authcode = isset($response['authcode']) ? $response['authcode'] : '';
 
-  // This digital signature should correspond to the one Realex Payments returns
-  // and can therefore be used to verify the message Realex Payments sends back.
+  // This digital signature should correspond to the one Global Payments returns
+  // and can therefore be used to verify the message Global Payments sends back.
   $tmp = "$timestamp.$merchantid.$orderid.$resultcode.$message.$pasref.$authcode";
   $sha1hash = sha1($tmp);
   $tmp = "$sha1hash.$secret";
@@ -577,9 +575,9 @@ function _commerce_realex_remote_verify_response($type, $request, &$response, $o
 
   $success = FALSE;
 
-  // Check to see if hashes match or not
+  // Check to see if hashes match or not.
   if ($sha1hash != $response['sha1hash']) {
-    watchdog('commerce_realex', 'Hash match failed for order @order_id.', array('@order_id' => $response['orderid']));
+    watchdog('commerce_realex', 'Hash match failed for order @order_id.', ['@order_id' => $response['orderid']]);
     drupal_set_message(t("Hashes don't match - response not authenticated!"), 'error');
     $response['user_message'] = 'Bank connection error, please try again later';
   }
@@ -594,20 +592,24 @@ function _commerce_realex_remote_verify_response($type, $request, &$response, $o
 }
 
 /**
- * Generate xml
+ * Generate xml.
  *
  * @param request
- *     An array with all the transaction data.
+ *   An array with all the transaction data.
  */
 function _commerce_realex_remote_build_xml_request($request, $type) {
   module_load_include('inc', 'commerce_realex', 'includes/commerce_realex_remote_3dsecure');
+
   switch ($type) {
     case 'dccrate':
       return _commerce_realex_remote_build_xml_request_dccrate($request);
+
     case '3ds-verifysig':
       return _commerce_realex_remote_build_xml_request_3dsecure_verifysig($request);
+
     case '3ds-verifyenrolled':
       return _commerce_realex_remote_build_xml_request_3dsecure_verifyenrolled($request);
+
     case 'auth':
     default:
       return _commerce_realex_remote_build_xml_request_auth($request);
@@ -637,14 +639,14 @@ function _commerce_realex_remote_build_xml_request_auth($request) {
   $xml .= "
     </card>";
   if (isset($request['cvn'])) {
-    $xml .="
+    $xml .= "
     <cvn>
       <number>" . $request['cvn'] . "</number>
       <presind>1</presind>
     </cvn>";
   }
   if (isset($request['dcc'])) {
-    $xml .="
+    $xml .= "
     <dccinfo>
       <ccp>" . $request['dcc_provider'] . "</ccp>
       <type>1</type>
@@ -665,7 +667,7 @@ function _commerce_realex_remote_build_xml_request_auth($request) {
     </comments>";
   }
   if (!empty($request['3dsecure']) && module_exists('commerce_3d_secure')) {
-    $xml .="
+    $xml .= "
     <mpi>";
     if (isset($request['cavv'])) {
       $xml .= "
@@ -679,14 +681,14 @@ function _commerce_realex_remote_build_xml_request_auth($request) {
       $xml .= "
       <eci>" . $request['eci'] . "</eci>";
     }
-    $xml .="
+    $xml .= "
     </mpi>";
   }
   $xml .= "
     <autosettle flag='" . $request['auto_settle'] . "'/>
     <sha1hash>" . $request['sha1hash'] . "</sha1hash>
     <tssinfo>";
-  $xml .=  "
+  $xml .= "
       <custipaddress>" . $request['ip_address'] . "</custipaddress>";
   if (!empty($request['billing'])) {
     $xml .= "
@@ -703,7 +705,7 @@ function _commerce_realex_remote_build_xml_request_auth($request) {
       </address>";
   }
   if (!empty($request['customer_id'])) {
-      $xml .= "
+    $xml .= "
       <custnum>" . $request['customer_id'] . "</custnum>";
   }
   if (!empty($request['products'])) {
@@ -714,7 +716,7 @@ function _commerce_realex_remote_build_xml_request_auth($request) {
     $xml .= "
       <varref>" . $request['varref'] . "</varref>";
   }
-  $xml .="
+  $xml .= "
     </tssinfo>
   </request>";
 
@@ -748,17 +750,16 @@ function _commerce_realex_remote_build_xml_request_dccrate($request) {
   return $xml;
 }
 
-
 /**
  * Save the transaction and update the order.
  *
- * @param $payment_method
+ * @param array $payment_method
  *   Payment method array.
- * @param $order
+ * @param object $order
  *   Commerce order object.
- * @param $response
+ * @param array $response
  *   Response data.
- * @param $log
+ * @param string $log
  *   Optional extra log message.
  */
 function commerce_realex_remote_transaction_save($transaction_type, $payment_method, $order, $response, $log = '') {
@@ -785,12 +786,12 @@ function commerce_realex_remote_transaction_save($transaction_type, $payment_met
 
   // Log the response variables.
   $transaction->message = 'Transaction type: @type<br />Status @resultcode, @message.<br />Timestamp: @timestamp<br />';
-  $transaction->message_variables = array(
+  $transaction->message_variables = [
     '@type' => $transaction_type,
     '@resultcode' => isset($response['result']) ? $response['result'] : '',
     '@message' => isset($response['message']) ? $response['message'] : '',
     '@timestamp' => isset($response['timestamp']) ? $response['timestamp'] : '',
-  );
+  ];
   if (!empty($response['orderid'])) {
     $transaction->message .= 'Order ID: @orderid<br />';
     $transaction->message_variables['@orderid'] = $response['orderid'];

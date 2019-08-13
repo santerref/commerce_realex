@@ -1,5 +1,5 @@
-name = Commerce Realex Payments
-description = Realex Payments integration with Drupal Commerce
+name = Commerce Realex / Global Payments
+description = Global Payments (formerly Realex Payments) integration with Drupal Commerce
 package = Commerce - Payment
 dependencies[] = commerce
 dependencies[] = commerce_payment
