@@ -7,7 +7,7 @@ requirement that you initially use the account in test mode to make sure that
 the process works.
 
 Test cards available at
-https://developer.realexpayments.com/#!/technical-resources/test-card
+https://developer.realexpayments.com/#!/resources/test-card-numbers
 
 Installation
 ------------

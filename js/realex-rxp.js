@@ -1,6 +1,6 @@
 /**
  * @file
- * Javascript for the node content editing form.
+ * Javascript for the commerce_realex module.
  */
 
 (function ($, Drupal, drupalSettings) {

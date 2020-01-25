@@ -2,15 +2,14 @@
 
 namespace Drupal\commerce_realex;
 
-// @todo ROAD-MAP use PayableItemInterface formally.
-// use Drupal\commerce_realex\PayableItemInterface;
-
 /**
  * Represents a Payable Item.
  */
-class PayableItem {
+class PayableItem implements PayableItemInterface {
 
   /**
+   * The private temp-store.
+   *
    * @var \Drupal\user\PrivateTempStore
    */
   protected $paymentTempStore;
@@ -32,22 +31,12 @@ class PayableItem {
    */
   public function __construct() {
     // @todo Use dependency injection to obtain these services.
-    $this->paymentTempStore = \Drupal::service('user.private_tempstore')->get('commerce_realex');
+    $this->paymentTempStore = \Drupal::service('user.private_tempstore')
+      ->get('commerce_realex');
   }
 
   /**
-   * Save a PayableItem in PrivateUsertempStore.
-   *
-   * We don't need to save anything about the Payment itself permanently.
-   * Items using this class can use the Global Payments Order ID as payment ID.
-   *
-   * @return string
-   *   The key the object was stored under in the Private User temp Store;
-   *
-   * @todo corresponding method to create from temp store, by UUID.
-   *
-   * @todo ROAD MAP
-   *  - abstract some of this to a PermitInterface?
+   * {@inheritDoc}
    */
   public function saveTempStore($uuid = NULL) {
     $uuid_service = \Drupal::service('uuid');
@@ -68,15 +57,7 @@ class PayableItem {
   }
 
   /**
-   * Retrieve a payable from Private User Temp Store.
-   *
-   * @param string $uuid
-   *   A UUID previously used to store data in the $paymentTempStore.
-   *
-   * @return Drupal\commerce_realex\PayableItem
-   *
-   * @todo ROAD-MAP
-   *   - formalize this in some interface, e.g. PayableItem
+   * {@inheritDoc}
    */
   public static function createFromPaymentTempStore(string $uuid) {
     $payable = new static();
@@ -92,12 +73,7 @@ class PayableItem {
   }
 
   /**
-   * Set a value.
-   *
-   * @param string $key
-   *   A field key.
-   * @param mixed $value
-   *   A value to set.
+   * {@inheritDoc}
    */
   public function setValue($key, $value) {
     // @todo validation?
@@ -105,13 +81,7 @@ class PayableItem {
   }
 
   /**
-   * General purpose getter.
-   *
-   * @param string $key
-   *   A field key.
-   *
-   * @return mixed
-   *   A value to set.
+   * {@inheritDoc}
    */
   public function getValue($key) {
     return $this->values[$key];
@@ -123,12 +93,21 @@ class PayableItem {
   public function getPayableAmount() {
     // @todo Could this be more robust by looking up the permit type (GUID)?
     if (isset($this->values['payable_amount'])) {
-      // Global Payments payments wants cents not euros.
-      $cents = $this->values['payable_amount'] * 100;
-      return (int) $cents;
+      return (int) $this->values['payable_amount'];
     }
-    else {
-      throw new \Exception('Amount not set.');
-    }
+
+    throw new \InvalidArgumentException('Amount not set.');
   }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getPayableCurrency() {
+    if (isset($this->values['payable_currency'])) {
+      return $this->values['payable_currency'];
+    }
+
+    throw new \InvalidArgumentException('Currency not set.');
+  }
+
 }

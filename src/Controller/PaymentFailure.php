@@ -2,9 +2,10 @@
 
 namespace Drupal\commerce_realex\Controller;
 
+use Drupal\commerce_realex\PayableItem;
 use Drupal\Core\Controller\ControllerBase;
-use Drupal\Core\Url;
 use Drupal\Core\Link;
+use Drupal\Core\Url;
 
 /**
  * Controller to handle payment failures.
@@ -14,6 +15,12 @@ class PaymentFailure extends Controllerbase {
   /**
    * Route controller method.
    *
+   * @param string $payable_item_id
+   *   The payable item UUID.
+   *
+   * @return array
+   *   A render array.
+   *
    * @todo ROAD-MAP:
    *   - get human-readable message from realex response
    *   - take action based on which realex response we get
@@ -21,11 +28,11 @@ class PaymentFailure extends Controllerbase {
    *   - handle other types of failure, more specific?
    */
   public function displayFailure($payable_item_id) {
-
-    $this->paymentFailureTempStore = \Drupal::service('user.private_tempstore')->get('commerce_realex_failure');
+    $this->paymentFailureTempStore = \Drupal::service('user.private_tempstore')
+      ->get('commerce_realex_failure');
     $payment = $this->paymentFailureTempStore->get('payment');
-    $message = $payment->getMessage();
-    $build = [];
+    \Drupal::logger('payment failed')->error('Global Payments returned:<br/><pre>' . print_r($payment, TRUE) . '</pre>');
+    $message = $payment->responseMessage;
 
     $url = Url::fromRoute('commerce_realex.payment_retry', ['payable_item_id' => $payable_item_id]);
     $add_link = Link::fromTextAndUrl($this->t('click here'), $url);
@@ -45,20 +52,31 @@ class PaymentFailure extends Controllerbase {
         'content-wrapper' => [
           '#type' => 'container',
           'block' => $block,
+          '#attributes' => [
+            'class' => ['realex-response'],
+          ],
         ],
       ],
     ];
+
     return $build;
   }
 
   /**
    * Allow a payment to be retried.
+   *
+   * @param string $payable_item_id
+   *   The payable item UUID.
+   *
+   * @return \Symfony\Component\HttpFoundation\RedirectResponse
+   *   A RedirectResponse Object to the Global Payments servers.
    */
   public function retryPayment($payable_item_id) {
     try {
       $this->payableItemId = $payable_item_id;
       // @todo - Generalise when new payments come on board.
-      $this->paymentTempStore = \Drupal::service('user.private_tempstore')->get('commerce_realex');
+      $this->paymentTempStore = \Drupal::service('user.private_tempstore')
+        ->get('commerce_realex');
       $this->payableItem = $this->paymentTempStore->get($payable_item_id);
     }
     catch (\Exception $e) {
@@ -72,7 +90,7 @@ class PaymentFailure extends Controllerbase {
     // Build temporary storage object from essential data.
     // @todo - the class shouldn't be hardcoded.
     $storage_data = [
-      'class' => 'Drupal\commerce_realex\PayableItem',
+      'class' => PayableItem::class,
       'values' => $this->payableItem['values'],
     ];
 

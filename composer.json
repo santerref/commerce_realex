@@ -2,7 +2,7 @@
     "name": "drupal/commerce_realex",
     "description": "Commerce Realex / Global Payments.",
     "type": "drupal-module",
-    "homepage": "https://drupal.org/project/commerce_realex",
+    "homepage": "https://www.drupal.org/project/commerce_realex",
     "authors": [
         {
             "name": "Stella Power (stella)",
@@ -11,21 +11,19 @@
         }
     ],
     "support": {
-        "issues": "https://drupal.org/project/issues/commerce_realex",
-        "irc": "irc://irc.freenode.org/drupal-contribute",
-        "source": "https://cgit.drupalcode.org/commerce_realex"
+        "issues": "https://www.drupal.org/project/issues/commerce_realex",
+        "source": "https://git.drupalcode.org/project/commerce_realex"
     },
-    "license": "GPL-2.0-or-later",
-    "minimum-stability": "dev",
-    "repositories": {
-        "realexpayments/rxp-js": {
+    "license": "GPL-2.0+",
+    "repositories": [
+        {
             "type": "package",
             "package": {
-                "name": "realexpayments/rxp-js",
-                "version": "1.2.1",
+                "name": "globalpayments/rxp-js",
+                "version": "1.3.1",
                 "type": "drupal-library",
                 "dist": {
-                    "url": "https://github.com/realexpayments/rxp-js/archive/v1.2.1.zip",
+                    "url": "https://github.com/globalpayments/rxp-js/archive/v1.3.1.zip",
                     "type": "zip"
                 },
                 "require": {
@@ -33,13 +31,14 @@
                 }
             }
         },
-        "realexpayments/rxp-hpp-php": {
+        {
             "type": "vcs",
-            "url": "https://github.com/Annertech/rxp-hpp-php"
+            "url": "https://github.com/annertech/php-sdk"
         }
-    },
+    ],
     "require": {
-        "realexpayments/rxp-hpp-php": "dev-master",
-        "realexpayments/rxp-js": "1.2.1"
+        "ext-json": "*",
+        "globalpayments/php-sdk": "1.3.3.1",
+        "globalpayments/rxp-js": "1.3.1"
     }
 }

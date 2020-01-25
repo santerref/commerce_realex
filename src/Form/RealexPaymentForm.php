@@ -6,30 +6,33 @@ use Drupal\Component\Utility\Html;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Url;
-use Drupal\Core\Link;
 
 /**
  * The Global Payments payment form displayed to end user.
  *
  * @todo Does this actually need to be a FormBase?
- *   We arent submitting it to Drupal!
+ *   We aren't submitting it to Drupal!
  *   Button is a html_tag <button>, not a FAPI submit.
  *   Route could use a _controller instead of _form?
  */
 class RealexPaymentForm extends FormBase {
 
   /**
+   * The user private payment temp-store.
+   *
    * @var \Drupal\user\PrivateTempStore
    */
   protected $paymentTempStore;
 
   /**
-   * @var Drupal\commerce_realex\PayableItemInterface
+   * The payable item.
+   *
+   * @var \Drupal\commerce_realex\PayableItemInterface
    */
   protected $payableItem;
 
   /**
-   * A UUID for a PayableItemInterface object.
+   * An UUID for a PayableItemInterface object.
    *
    * @var string
    */
@@ -46,11 +49,11 @@ class RealexPaymentForm extends FormBase {
    * {@inheritdoc}
    */
   public function buildForm(array $form, FormStateInterface $form_state, $payable_item_id = NULL) {
-
     try {
       $this->payableItemId = $payable_item_id;
       // @todo - Generalise when new payments come on board.
-      $this->paymentTempStore = \Drupal::service('user.private_tempstore')->get('commerce_realex');
+      $this->paymentTempStore = \Drupal::service('user.private_tempstore')
+        ->get('commerce_realex');
       $this->payableItem = $this->paymentTempStore->get($payable_item_id);
     }
     catch (\Exception $e) {
@@ -87,14 +90,11 @@ class RealexPaymentForm extends FormBase {
     ];
 
     // @todo - Make Cancel link return correctly.
-    /*
-    $url = Url::fromRoute('commerce_realex.payment_settings');
-    $cancel_link = Link::fromTextAndUrl($this->t('Cancel'), $url);
-    $cancel_link = $cancel_link->toRenderable();
-    $cancel_link['#attributes'] = ['class' => ['cancel-link']];
-    $form_buttons['commerce_realex_button']['cancel_link'] = $cancel_link;
-    */
-
+    // $url = Url::fromRoute('commerce_realex.payment_settings');
+    // $cancel_link = Link::fromTextAndUrl($this->t('Cancel'), $url);
+    // $cancel_link = $cancel_link->toRenderable();
+    // $cancel_link['#attributes'] = ['class' => ['cancel-link']];
+    // $form_buttons['commerce_realex_button']['cancel_link'] = $cancel_link;
     $form['wrapper'] = [
       '#type' => 'container',
       'content' => [
@@ -123,7 +123,6 @@ class RealexPaymentForm extends FormBase {
       'responseUrl' => $response_url,
       'requestUrl' => $request_url,
     ];
-
     $form['#attached']['library'][] = 'commerce_realex/realex-rxpjs';
 
     return $form;
@@ -133,8 +132,9 @@ class RealexPaymentForm extends FormBase {
    * {@inheritdoc}
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
-    // Nothing Special.  We are actually using JS to send a request to Global
-    // Payments, then redirect to our Global Payments Response controller.
+    // Nothing to do here.
+    // We are actually using JS to send a request to Global Payments, then
+    // redirect to our Global Payments Response controller.
   }
 
 }

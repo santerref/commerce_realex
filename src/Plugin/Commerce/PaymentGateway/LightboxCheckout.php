@@ -2,10 +2,10 @@
 
 namespace Drupal\commerce_realex\Plugin\Commerce\PaymentGateway;
 
-use Drupal\commerce_payment\Plugin\Commerce\PaymentGateway\OffsitePaymentGatewayBase;
-use Drupal\Core\Form\FormStateInterface;
 use Drupal\commerce_order\Entity\OrderInterface;
 use Drupal\commerce_payment\Exception\PaymentGatewayException;
+use Drupal\commerce_payment\Plugin\Commerce\PaymentGateway\OffsitePaymentGatewayBase;
+use Drupal\Core\Form\FormStateInterface;
 use Symfony\Component\HttpFoundation\Request;
 
 /**
@@ -16,7 +16,8 @@ use Symfony\Component\HttpFoundation\Request;
  *   label = @Translation("Global Payments (Lightbox with Iframe)"),
  *   display_label = @Translation("Global Payments"),
  *    forms = {
- *     "offsite-payment" = "Drupal\commerce_realex\PluginForm\RedirectCheckoutForm",
+ *     "offsite-payment" =
+ *   "Drupal\commerce_realex\PluginForm\RedirectCheckoutForm",
  *   },
  *   payment_method_types = {"credit_card"},
  *   credit_card_types = {
@@ -28,6 +29,9 @@ class LightboxCheckout extends OffsitePaymentGatewayBase {
 
   /**
    * Initialise default configuration.
+   *
+   * @return array
+   *   The default configuration array with Global Payments default conf added.
    */
   public function defaultConfiguration() {
     return [
@@ -40,6 +44,14 @@ class LightboxCheckout extends OffsitePaymentGatewayBase {
 
   /**
    * Build the configuration form.
+   *
+   * @param array $form
+   *   The form array.
+   * @param \Drupal\Core\Form\FormStateInterface $form_state
+   *   The form state.
+   *
+   * @return array
+   *   The form array to return.
    */
   public function buildConfigurationForm(array $form, FormStateInterface $form_state) {
     $form = parent::buildConfigurationForm($form, $form_state);
@@ -81,6 +93,11 @@ class LightboxCheckout extends OffsitePaymentGatewayBase {
 
   /**
    * Submission handle for configuration form.
+   *
+   * @param array $form
+   *   The form.
+   * @param \Drupal\Core\Form\FormStateInterface $form_state
+   *   The form state.
    */
   public function submitConfigurationForm(array &$form, FormStateInterface $form_state) {
     parent::submitConfigurationForm($form, $form_state);
@@ -95,13 +112,23 @@ class LightboxCheckout extends OffsitePaymentGatewayBase {
 
   /**
    * Process the payment response.
+   *
+   * @param \Drupal\commerce_order\Entity\OrderInterface $order
+   *   The order.
+   * @param \Symfony\Component\HttpFoundation\Request $request
+   *   Request represents an HTTP request.
+   *
+   * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
+   * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
+   * @throws \Drupal\Core\Entity\EntityStorageException
    */
   public function onReturn(OrderInterface $order, Request $request) {
     // Get Payment ID from Request.
     $payable_item_id = $request->query->get('payable_item_id');
     try {
       $this->payableItemId = $payable_item_id;
-      $this->paymentTempStore = \Drupal::service('user.private_tempstore')->get('commerce_realex');
+      $this->paymentTempStore = \Drupal::service('user.private_tempstore')
+        ->get('commerce_realex');
       $payable_item_class = $this->paymentTempStore->get($payable_item_id)['class'];
       $this->payableItem = $payable_item_class::createFromPaymentTempStore($payable_item_id);
     }
