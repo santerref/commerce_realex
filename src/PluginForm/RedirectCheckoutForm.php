@@ -3,11 +3,9 @@
 namespace Drupal\commerce_realex\PluginForm;
 
 use Drupal\commerce_payment\PluginForm\PaymentOffsiteForm;
-use Drupal\commerce_order\Entity\Order;
-use Drupal\Core\Form\FormStateInterface;
-use Symfony\Component\HttpFoundation\Request;
-use Drupal\Core\Url;
 use Drupal\commerce_realex\PayableItem;
+use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Url;
 
 /**
  * Realex Redirect checkout form.
@@ -20,13 +18,15 @@ class RedirectCheckoutForm extends PaymentOffsiteForm {
   public function buildConfigurationForm(array $form, FormStateInterface $form_state) {
     $form = parent::buildConfigurationForm($form, $form_state);
 
+    /** @var \Drupal\commerce_payment\Entity\PaymentInterface $payment */
     $payment = $this->entity;
     $order = $payment->getOrder();
-    $profile = $order->getBillingProfile();
     $address = $order->getBillingProfile()->get('address')->first();
     $entity_type_manager = \Drupal::service('entity_type.manager');
     $currency_code = $payment->getAmount()->getCurrencyCode();
-    $currency = $entity_type_manager->getStorage('commerce_currency')->load($currency_code);
+    /** @var \Drupal\commerce_price\Entity\CurrencyInterface $currency */
+    $currency = $entity_type_manager->getStorage('commerce_currency')
+      ->load($currency_code);
     $currency_symbol = $currency->getSymbol();
 
     $plugin = $payment->getPaymentGateway()->getPlugin();
@@ -40,6 +40,7 @@ class RedirectCheckoutForm extends PaymentOffsiteForm {
     $payable->setValue('family_name', $address->getFamilyName());
     $payable->setValue('commerce_order_id', $order->id());
     $payable->setValue('realex_config', $plugin->getConfiguration());
+    $payable->setValue('payable_uid', $order->getCustomerId());
 
     $data = [];
     $temp_store_key = $payable->saveTempStore();
