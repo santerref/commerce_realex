@@ -71,8 +71,14 @@ class RealexPaymentForm extends FormBase {
       '#markup' => $currency_formatter->format($payable['payable_amount'], $payable['payable_currency']),
       '#title' => $this->t('Summary:'),
     ];
-    $pay_button_id = Html::getUniqueId('realex-pay-button');
 
+    // Display a warning to wait until the redirect from Global Payments back to
+    // the site is done.
+    $form_fields['realex_warning'] = [
+      '#markup' => $this->t('Please wait until the payment has fully completed after filling out your credit card credentials.<br>This way you can be sure your order will be correctly processed by us.')
+    ];
+
+    $pay_button_id = Html::getUniqueId('realex-pay-button');
     $form_buttons['commerce_realex_button'] = [
       '#type' => 'html_tag',
       '#tag' => 'button',
