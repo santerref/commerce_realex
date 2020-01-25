@@ -7,6 +7,7 @@ use com\realexpayments\hpp\sdk\RealexHpp;
 use com\realexpayments\hpp\sdk\RealexValidationException;
 use com\realexpayments\hpp\sdk\RealexException;
 use Drupal\Core\Controller\ControllerBase;
+use Drupal\Core\Messenger\MessengerInterface;
 use Drupal\Core\Routing\TrustedRedirectResponse;
 // @todo ROAD-MAP use PayableItemInterface formally
 // use Drupal\commerce_realex\PayableItemInterface;
@@ -34,6 +35,13 @@ class RealexHppResponse extends ControllerBase {
    * @var com\realexpayments\hpp\sdk\domain\HppResponse
    */
   protected $hppResponse;
+
+  /**
+   * The Messenger service.
+   *
+   * @var \Drupal\Core\Messenger\MessengerInterface
+   */
+  protected $messenger;
 
   /**
    * Process a HPP payment respnse from Global Payments.
@@ -86,7 +94,7 @@ class RealexHppResponse extends ControllerBase {
       $currency_formatter = \Drupal::service('commerce_price.currency_formatter');
       $payment_amount_formatted = $currency_formatter->format($this->payableItem->getValue('payable_amount'), $this->payableItem->getValue('payable_currency'));
       $display_message = $this->t('Thank you for your payment of @payment_amount.', ['@payment_amount' => $payment_amount_formatted]);
-      drupal_set_message($display_message);
+      $this->messenger()->addMessage($display_message);
 
       // Update PayableItem in tempstore.
       $this->payableItem->setValue('payment_complete', TRUE);
