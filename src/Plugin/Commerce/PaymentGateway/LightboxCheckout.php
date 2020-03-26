@@ -88,6 +88,17 @@ class LightboxCheckout extends OffsitePaymentGatewayBase {
       '#required' => TRUE,
     ];
 
+    $form['realex_payment_method'] = array(
+      '#type' => 'radios',
+      '#title' => $this->t('Realex Payment Method'),
+      '#options' => array(
+        'lightbox' => $this->t('Lightbox'),
+        'redirect' => $this->t('Redirect'),
+      ),
+      '#default_value' => $this->configuration['realex_payment_method'],
+      '#required' => TRUE,
+    );
+
     return $form;
   }
 
@@ -107,6 +118,7 @@ class LightboxCheckout extends OffsitePaymentGatewayBase {
       $this->configuration['realex_merchant_id'] = $values['realex_merchant_id'];
       $this->configuration['realex_account'] = $values['realex_account'];
       $this->configuration['realex_shared_secret'] = $values['realex_shared_secret'];
+      $this->configuration['realex_payment_method'] = $values['realex_payment_method'];
     }
   }
 
@@ -127,10 +139,9 @@ class LightboxCheckout extends OffsitePaymentGatewayBase {
     $payable_item_id = $request->query->get('payable_item_id');
     try {
       $this->payableItemId = $payable_item_id;
-      $this->paymentTempStore = \Drupal::service('user.private_tempstore')
-        ->get('commerce_realex');
-      $payable_item_class = $this->paymentTempStore->get($payable_item_id)['class'];
-      $this->payableItem = $payable_item_class::createFromPaymentTempStore($payable_item_id);
+      $this->paymentSharedTempStore = \Drupal::service('tempstore.shared')->get('commerce_realex');
+      $payable_item_class = $this->paymentSharedTempStore->get($payable_item_id)['class'];
+      $this->payableItem = $payable_item_class::createFromPaymentSharedTempStore($payable_item_id);
     }
     catch (\Exception $e) {
       \Drupal::logger('commerce_realex')->error($e->getMessage());

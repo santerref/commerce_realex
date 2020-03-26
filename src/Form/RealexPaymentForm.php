@@ -52,9 +52,8 @@ class RealexPaymentForm extends FormBase {
     try {
       $this->payableItemId = $payable_item_id;
       // @todo - Generalise when new payments come on board.
-      $this->paymentTempStore = \Drupal::service('user.private_tempstore')
-        ->get('commerce_realex');
-      $this->payableItem = $this->paymentTempStore->get($payable_item_id);
+      $this->paymentSharedTempStore = \Drupal::service('tempstore.shared')->get('commerce_realex');
+      $this->payableItem = $this->paymentSharedTempStore->get($payable_item_id);
     }
     catch (\Exception $e) {
       \Drupal::logger('commerce_realex')->error($e->getMessage());
@@ -128,6 +127,7 @@ class RealexPaymentForm extends FormBase {
       'hppUrl' => $realex_config['realex_server_url'],
       'responseUrl' => $response_url,
       'requestUrl' => $request_url,
+      'paymentMethod' => $realex_config['realex_payment_method'],
     ];
     $form['#attached']['library'][] = 'commerce_realex/realex-rxpjs';
 

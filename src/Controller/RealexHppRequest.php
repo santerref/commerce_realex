@@ -55,10 +55,9 @@ class RealexHppRequest extends ControllerBase {
   public function buildJson($payable_item_id) {
     try {
       $this->payableItemId = $payable_item_id;
-      $this->paymentTempStore = \Drupal::service('user.private_tempstore')
-        ->get('commerce_realex');
-      $payable_item_class = $this->paymentTempStore->get($payable_item_id)['class'];
-      $this->payableItem = $payable_item_class::createFromPaymentTempStore($payable_item_id);
+      $this->paymentSharedTempStore = \Drupal::service('tempstore.shared')->get('commerce_realex');
+      $payable_item_class = $this->paymentSharedTempStore->get($payable_item_id)['class'];
+      $this->payableItem = $payable_item_class::createFromPaymentSharedTempStore($payable_item_id);
     }
     catch (\Exception $e) {
       \Drupal::logger('commerce_realex')->error($e->getMessage());
@@ -99,15 +98,15 @@ class RealexHppRequest extends ControllerBase {
     $numeric_country_code = $this->getCountryNumericCode($alpha_country_code);
 
     $billingAddress = new Address();
-    $billingAddress->streetAddress1 = $this->payableItem->getValue('streetAddress1')
-      ->getString();
-    $billingAddress->streetAddress2 = $this->payableItem->getValue('streetAddress2')
-      ->getString();
-    $billingAddress->streetAddress3 = $this->payableItem->getValue('streetAddress3')
-      ->getString();
-    $billingAddress->city = $this->payableItem->getValue('city')->getString();
-    $billingAddress->postalCode = $this->payableItem->getValue('postalCode')
-      ->getString();
+    $billingAddress->streetAddress1 = $this->cleanString($this->payableItem->getValue('streetAddress1')
+      ->getString());
+    $billingAddress->streetAddress2 = $this->cleanString($this->payableItem->getValue('streetAddress2')
+      ->getString());
+    $billingAddress->streetAddress3 = $this->cleanString($this->payableItem->getValue('streetAddress3')
+      ->getString());
+    $billingAddress->city = $this->cleanString($this->payableItem->getValue('city')->getString());
+    $billingAddress->postalCode = $this->cleanString($this->payableItem->getValue('postalCode')
+      ->getString());
     $billingAddress->country = $numeric_country_code;
 
     /* Shipping address is optional so not required.*/
@@ -155,6 +154,19 @@ class RealexHppRequest extends ControllerBase {
     }
   }
 
+  /**
+   * Sanitizes input for addresses.
+   *
+   * @param string $input
+   *   A text string.
+   *
+   * @return string
+   */
+  function cleanString($input) {
+    // Realex's docs say: ^[\p{L}\p{M}\p{Blank}\p{N}\/\.\-\_\'\,]*$
+    // which is Java-style. PHP version below.
+    return preg_replace("/[^[:alnum:][:space:]\-\_\.\,\']/u", ' ', $input);
+  }
   /**
    * Returns a numeric country code.
    *

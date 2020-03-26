@@ -28,11 +28,17 @@ class PaymentFailure extends Controllerbase {
    *   - handle other types of failure, more specific?
    */
   public function displayFailure($payable_item_id) {
-    $this->paymentFailureTempStore = \Drupal::service('user.private_tempstore')
+    $this->paymentFailureTempStore = \Drupal::service('tempstore.shared')
       ->get('commerce_realex_failure');
     $payment = $this->paymentFailureTempStore->get('payment');
     \Drupal::logger('payment failed')->error('Global Payments returned:<br/><pre>' . print_r($payment, TRUE) . '</pre>');
-    $message = $payment->responseMessage;
+    // Redirect failure returns an array. Lightbox gives an object.
+    if (!is_object($payment)) {
+      $message = $payment['MESSAGE'];
+    }
+    else {
+      $message = $payment->responseMessage;
+    }
 
     $url = Url::fromRoute('commerce_realex.payment_retry', ['payable_item_id' => $payable_item_id]);
     $add_link = Link::fromTextAndUrl($this->t('click here'), $url);
@@ -75,7 +81,7 @@ class PaymentFailure extends Controllerbase {
     try {
       $this->payableItemId = $payable_item_id;
       // @todo - Generalise when new payments come on board.
-      $this->paymentTempStore = \Drupal::service('user.private_tempstore')
+      $this->paymentTempStore = \Drupal::service('tempstore.shared')
         ->get('commerce_realex');
       $this->payableItem = $this->paymentTempStore->get($payable_item_id);
     }

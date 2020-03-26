@@ -3,6 +3,7 @@
 namespace Drupal\commerce_realex\Controller;
 
 use Drupal\Core\Controller\ControllerBase;
+use Drupal\Core\Url;
 use GlobalPayments\Api\Entities\Exceptions\ApiException;
 use GlobalPayments\Api\Entities\Exceptions\BuilderException;
 use GlobalPayments\Api\Entities\Exceptions\ConfigurationException;
@@ -61,10 +62,10 @@ class RealexHppResponse extends ControllerBase {
 
     try {
       $this->payableItemId = $payable_item_id;
-      $this->paymentTempStore = \Drupal::service('user.private_tempstore')
-        ->get('commerce_realex');
-      $payable_item_class = $this->paymentTempStore->get($payable_item_id)['class'];
-      $this->payableItem = $payable_item_class::createFromPaymentTempStore($payable_item_id);
+      $this->paymentSharedTempStore = \Drupal::service('tempstore.shared')->get('commerce_realex');
+      $payable = $this->paymentSharedTempStore->get($payable_item_id);
+      $payable_item_class = $this->paymentSharedTempStore->get($payable_item_id)['class'];
+      $this->payableItem = $payable_item_class::createFromPaymentSharedTempStore($payable_item_id);
     }
    catch (BuilderException $e) {
      // Handle builder errors.
@@ -99,20 +100,35 @@ class RealexHppResponse extends ControllerBase {
     $config->merchantId = $realex_config['realex_merchant_id'];
     $config->accountId = $realex_config['realex_account'];
     $config->sharedSecret = $realex_config['realex_shared_secret'];
-    $config->serviceUrl = 'https://pay.sandbox.realexpayments.com/pay';
+    $config->serviceUrl = $realex_config['realex_server_url'];
 
     $service = new HostedService($config);
 
     try {
       // Create the response object from the response JSON.
-      $responseJson = $_POST['hppResponse'];
-      $parsedResponse = $service->parseResponse($responseJson, TRUE);
-      $result = $parsedResponse->responseCode;
-      $globalPaymentsMessage = $parsedResponse->responseMessage;
-      $responseValues = $parsedResponse->responseValues;
-      $authCode = $parsedResponse->responseValues['AUTHCODE'];
-      $clean_data = stripslashes($responseValues['SUPPLEMENTARY_DATA']);
-      $supplementary_data = json_decode($clean_data, FALSE);
+      // Get type of payment method from config because of different returned data structure.
+      if ($realex_config['realex_payment_method'] == 'lightbox') {
+        $responseJson = $_POST['hppResponse'];
+        $parsedResponse = $service->parseResponse($responseJson, true);
+        $orderId = $parsedResponse->orderId; // GTI5Yxb0SumL_TkDMCAxQA
+        $result = $parsedResponse->responseCode; // 00
+        $globalPaymentsMessage = $parsedResponse->responseMessage; // [ test system ] Authorised
+        $responseValues = $parsedResponse->responseValues; // get values accessible by key
+        $pasRef = $parsedResponse->responseValues['PASREF'];
+        $clean_data = stripslashes($responseValues['SUPPLEMENTARY_DATA']);
+        $supplementary_data = json_decode($clean_data);
+      }
+      else {
+        $parsedResponse = $_POST;
+        $orderId = $parsedResponse['ORDER_ID'];
+        $result = $parsedResponse['RESULT'];
+        $globalPaymentsMessage = $parsedResponse['MESSAGE'];
+        $responseValues = $parsedResponse;
+        $pasRef = $parsedResponse['PASREF'];
+        $clean_data = stripslashes($parsedResponse['SUPPLEMENTARY_DATA']);
+        $supplementary_data = json_decode($clean_data);
+        $authCode = $parsedResponse['AUTHCODE'];
+      }
     }
     catch (BuilderException $e) {
       // Handle builder errors.
@@ -144,13 +160,14 @@ class RealexHppResponse extends ControllerBase {
     // We sent this to Realex in the request JSON, expect to get it back.
     $this->payableItemId = $supplementary_data->temporary_payable_item_id;
 
-    // Retrieve object representing temporary record from paymentTempStore.
-    $payable_item_class = $this->paymentTempStore->get($this->payableItemId)['class'];
-    /* @var \Drupal\commerce_realex\PayableItemInterface */
-    $this->payableItem = $payable_item_class::createFromPaymentTempStore($this->payableItemId);
+    // Retrieve object representing temporary record from paymentSharedTempStore.
+    $payable_item_class = $this->paymentSharedTempStore->get($this->payableItemId)['class'];
+    /* @var Drupal\commerce_realex\PayableItemInterface */
+    $this->payableItem = $payable_item_class::createFromPaymentSharedTempStore($this->payableItemId);
 
     // Check stuff is OK.
     if ($result == '00') {
+      \Drupal::logger('realex success')->error('we have a successful transaction');
       // Display a message.
       // @todo - Allow user to override this.
       $currency_formatter = \Drupal::service('commerce_price.currency_formatter');
@@ -162,24 +179,14 @@ class RealexHppResponse extends ControllerBase {
       $this->payableItem->setValue('payment_complete', TRUE);
       $this->payableItem->setValue('authCode', $authCode);
       $this->payableItem->setValue('message', $globalPaymentsMessage);
-      $this->payableItem->saveTempStore($this->payableItemId);
+      $this->payableItem->saveSharedTempStore($this->payableItemId);
 
       // Redirect the user to the "Successful Payment" callback.
       $success_callback = 'commerce_payment.checkout.return';
-      return $this->redirect($success_callback,
-        [
-          'commerce_order' => $this->payableItem->getValue('commerce_order_id'),
-          'step' => 'payment',
-        ],
-        [
-          'query' => ['payable_item_id' => $this->payableItemId],
-        ]
-      );
+      return $this->redirect_back($realex_config['realex_payment_method'], TRUE);
     }
 
     // Otherwise something went wrong with payment.
-    \Drupal::logger('realex response')
-      ->notice('unsuccessful before redirect');
 
     // @todo tell the user the outcome!
     // @todo get human-readable message from realex response
@@ -189,13 +196,70 @@ class RealexHppResponse extends ControllerBase {
     // @todo - handle other types of failure, more specific?
     // Fallback message if no other remedial action has already been taken.
     // Store the response and redirect to callback.
-    $this->paymentFailureTempStore = \Drupal::service('user.private_tempstore')
+    $this->paymentFailureTempStore = \Drupal::service('tempstore.shared')
       ->get('commerce_realex_failure');
     $this->paymentFailureTempStore->set('payment', $parsedResponse);
-    return $this->redirect('commerce_realex.payment_failure',
-      ['payable_item_id' => $this->payableItemId]
-    );
+    return $this->redirect_back($realex_config['realex_payment_method'], FALSE);
 
   }
 
+  /**
+   * Handle what happens on successful transaction.
+   *
+   * Lightbox needs a Redirect response.
+   * Redirect needs HTML response.
+   *
+   * Parameter: $method string
+   */
+  public function redirect_back($method, $success) {
+    $success_callback = 'commerce_payment.checkout.return';
+    $failure_callback = 'commerce_realex.payment_failure';
+    if ($success) {
+      $callback = $success_callback;
+    }
+    else {
+      $callback = $failure_callback;
+    }
+    // Redirect requires HTML to be returned. Lightbox can, ironically, handle a redirect.
+    if ($method == 'redirect') {
+      if ($success) {
+        $url = Url::fromRoute($callback,
+          [
+            'commerce_order' => $this->payableItem->getValue('commerce_order_id'),
+            'step' => 'payment',
+          ],
+          [
+            'query' => ['payable_item_id' => $this->payableItemId],
+            'absolute' => TRUE,
+          ]
+        );
+      }
+      else {
+        $url = Url::fromRoute($callback,
+          [
+            'payable_item_id' => $this->payableItemId,
+          ],
+          [
+            'absolute' => TRUE,
+          ]
+        );
+      }
+      $html = '<style type="text/css">body {display: none;}</style>';
+      $html .= '<script type="text/javascript"> window.location = "' . $url->toString() . '";</script>';
+      print $html;
+      return '';
+    }
+    else {
+      \Drupal::logger('realex redirect')
+      ->notice('doing lightbox redirect');
+      // We'll make Lightbox the default for now.
+      return $this->redirect($callback,
+       [
+          'commerce_order' => $this->payableItem->getValue('commerce_order_id'),
+          'step' => 'payment',
+        ],
+        ['query' => ['payable_item_id' => $this->payableItemId],]
+      );
+    }
+  }
 }

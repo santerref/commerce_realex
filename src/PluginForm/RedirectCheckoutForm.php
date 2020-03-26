@@ -67,7 +67,7 @@ class RedirectCheckoutForm extends PaymentOffsiteForm {
     $payable->setValue('payable_uid', $order->getCustomerId());
 
     $data = [];
-    $temp_store_key = $payable->saveTempStore();
+    $temp_store_key = $payable->saveSharedTempStore();
 
     // Redirect to Payment Form.
     $url = Url::fromRoute('commerce_realex.payment_form', ['payable_item_id' => $temp_store_key]);
