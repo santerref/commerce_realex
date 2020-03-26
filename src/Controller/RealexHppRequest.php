@@ -92,6 +92,7 @@ class RealexHppRequest extends ControllerBase {
     $hostedPaymentData->customerPhoneMobile = '';
     $hostedPaymentData->supplementaryData = addslashes(json_encode($supplementary_data));
     $hostedPaymentData->addressesMatch = FALSE;
+    $hostedPaymentData->customerNumber = $this->payableItem->getValue('payable_uid');
 
     // Realex requires a numeric country code. The order has an alpha-2 code.
     $alpha_country_code = $this->payableItem->getValue('country')->getString();
@@ -114,11 +115,15 @@ class RealexHppRequest extends ControllerBase {
     $payable_amount = $this->payableItem->getPayableAmount();
     $payable_currency = $this->payableItem->getPayableCurrency();
 
+    // Add the Drupal Commerce order ID in comment 1.
+    $order_id = $this->payableItem->getValue('commerce_order_id');
+
     try {
       $hppJson = $service->charge($payable_amount)
         ->withCurrency($payable_currency)
         ->withHostedPaymentData($hostedPaymentData)
         ->withAddress($billingAddress, AddressType::BILLING)
+        ->withDescription($order_id)
         ->serialize();
 
       $response = new Response();
