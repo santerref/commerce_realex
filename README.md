@@ -11,17 +11,17 @@ https://developer.realexpayments.com/#!/resources/test-card-numbers
 
 Installation
 ------------
- - To make sure the correct dependencies are pulled in through composer, you have to add the following
+ - To make sure the correct dependencies are pulled in through composer, you have to _first_ add the following
  to the `repositories` section of your root `composer.json`:
 ```
 {
     "type": "package",
     "package": {
-        "name": "globalpayments/rxp-js",
-        "version": "1.3.1",
+        "name": "annertech/rxp-js",
+        "version": "1.3.1.21",
         "type": "drupal-library",
         "dist": {
-            "url": "https://github.com/globalpayments/rxp-js/archive/v1.3.1.zip",
+            "url": "https://github.com/Annertech/rxp-js/archive/1.3.1.21.zip",
             "type": "zip"
         },
         "require": {
@@ -34,6 +34,7 @@ Installation
     "url": "https://github.com/annertech/php-sdk"
 }
 ```
- - Download and enable the module
+ - Then pull in the module through `composer require drupal/commerce_realex`
+ - Enable the module
  - Go to the payment methods settings page at admin/commerce/config/payment-gateways
  - Select "Add Payment Gateway" and add the Global Payments details

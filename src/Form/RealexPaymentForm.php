@@ -18,11 +18,11 @@ use Drupal\Core\Url;
 class RealexPaymentForm extends FormBase {
 
   /**
-   * The user private payment temp-store.
+   * The shared payment temp-store.
    *
-   * @var \Drupal\user\PrivateTempStore
+   * @var \Drupal\Core\TempStore\SharedTempStore
    */
-  protected $paymentTempStore;
+  protected $paymentSharedTempStore;
 
   /**
    * The payable item.
@@ -52,7 +52,8 @@ class RealexPaymentForm extends FormBase {
     try {
       $this->payableItemId = $payable_item_id;
       // @todo - Generalise when new payments come on board.
-      $this->paymentSharedTempStore = \Drupal::service('tempstore.shared')->get('commerce_realex');
+      $this->paymentSharedTempStore = \Drupal::service('tempstore.shared')
+        ->get('commerce_realex');
       $this->payableItem = $this->paymentSharedTempStore->get($payable_item_id);
     }
     catch (\Exception $e) {
@@ -74,7 +75,7 @@ class RealexPaymentForm extends FormBase {
     // Display a warning to wait until the redirect from Global Payments back to
     // the site is done.
     $form_fields['realex_warning'] = [
-      '#markup' => $this->t('Please wait until the payment has fully completed after filling out your credit card credentials.<br>This way you can be sure your order will be correctly processed by us.')
+      '#markup' => $this->t('Please wait until the payment has fully completed after filling out your credit card credentials.<br>This way you can be sure your order will be correctly processed by us.'),
     ];
 
     $pay_button_id = Html::getUniqueId('realex-pay-button');
@@ -94,12 +95,6 @@ class RealexPaymentForm extends FormBase {
       ],
     ];
 
-    // @todo - Make Cancel link return correctly.
-    // $url = Url::fromRoute('commerce_realex.payment_settings');
-    // $cancel_link = Link::fromTextAndUrl($this->t('Cancel'), $url);
-    // $cancel_link = $cancel_link->toRenderable();
-    // $cancel_link['#attributes'] = ['class' => ['cancel-link']];
-    // $form_buttons['commerce_realex_button']['cancel_link'] = $cancel_link;
     $form['wrapper'] = [
       '#type' => 'container',
       'content' => [

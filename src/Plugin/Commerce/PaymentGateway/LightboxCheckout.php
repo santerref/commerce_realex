@@ -28,6 +28,27 @@ use Symfony\Component\HttpFoundation\Request;
 class LightboxCheckout extends OffsitePaymentGatewayBase {
 
   /**
+   * The shared payment temp-store.
+   *
+   * @var \Drupal\Core\TempStore\SharedTempStore
+   */
+  protected $paymentSharedTempStore;
+
+  /**
+   * The payable item.
+   *
+   * @var \Drupal\commerce_realex\PayableItemInterface
+   */
+  protected $payableItem;
+
+  /**
+   * The payable item UUID.
+   *
+   * @var string
+   */
+  protected $payableItemId;
+
+  /**
    * Initialise default configuration.
    *
    * @return array
@@ -88,16 +109,16 @@ class LightboxCheckout extends OffsitePaymentGatewayBase {
       '#required' => TRUE,
     ];
 
-    $form['realex_payment_method'] = array(
+    $form['realex_payment_method'] = [
       '#type' => 'radios',
       '#title' => $this->t('Realex Payment Method'),
-      '#options' => array(
+      '#options' => [
         'lightbox' => $this->t('Lightbox'),
         'redirect' => $this->t('Redirect'),
-      ),
+      ],
       '#default_value' => $this->configuration['realex_payment_method'],
       '#required' => TRUE,
-    );
+    ];
 
     return $form;
   }
@@ -139,7 +160,8 @@ class LightboxCheckout extends OffsitePaymentGatewayBase {
     $payable_item_id = $request->query->get('payable_item_id');
     try {
       $this->payableItemId = $payable_item_id;
-      $this->paymentSharedTempStore = \Drupal::service('tempstore.shared')->get('commerce_realex');
+      $this->paymentSharedTempStore = \Drupal::service('tempstore.shared')
+        ->get('commerce_realex');
       $payable_item_class = $this->paymentSharedTempStore->get($payable_item_id)['class'];
       $this->payableItem = $payable_item_class::createFromPaymentSharedTempStore($payable_item_id);
     }
@@ -155,7 +177,7 @@ class LightboxCheckout extends OffsitePaymentGatewayBase {
     $payment = $payment_storage->create([
       'state' => 'completed',
       'amount' => $order->getTotalPrice(),
-      'payment_gateway' => $this->entityId,
+      'payment_gateway' => $this->parentEntity->id(),
       'order_id' => $order->id(),
       'remote_id' => $this->payableItem->getValue('authCode'),
       'remote_state' => $request->request->get('remote_state'),

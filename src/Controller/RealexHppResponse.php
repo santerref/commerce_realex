@@ -4,13 +4,9 @@ namespace Drupal\commerce_realex\Controller;
 
 use Drupal\Core\Controller\ControllerBase;
 use Drupal\Core\Url;
-use GlobalPayments\Api\Entities\Exceptions\ApiException;
-use GlobalPayments\Api\Entities\Exceptions\BuilderException;
-use GlobalPayments\Api\Entities\Exceptions\ConfigurationException;
-use GlobalPayments\Api\Entities\Exceptions\GatewayException;
-use GlobalPayments\Api\Entities\Exceptions\UnsupportedTransactionException;
 use GlobalPayments\Api\Services\HostedService;
 use GlobalPayments\Api\ServicesConfig;
+use Symfony\Component\HttpFoundation\Response;
 
 // @todo ROAD-MAP use CrmPayableItemInterface formally
 
@@ -20,11 +16,18 @@ use GlobalPayments\Api\ServicesConfig;
 class RealexHppResponse extends ControllerBase {
 
   /**
-   * The user private payment temp-store.
+   * The shared payment temp-store.
    *
-   * @var \Drupal\user\PrivateTempStore
+   * @var \Drupal\Core\TempStore\SharedTempStore
    */
-  protected $paymentTempStore;
+  protected $paymentSharedTempStore;
+
+  /**
+   * The shared failed payment temp-store.
+   *
+   * @var \Drupal\Core\TempStore\SharedTempStore
+   */
+  protected $paymentFailureTempStore;
 
   /**
    * The payable item.
@@ -53,43 +56,21 @@ class RealexHppResponse extends ControllerBase {
    * @param string $payable_item_id
    *   The payable item UUID.
    *
-   * @return string|\Symfony\Component\HttpFoundation\RedirectResponse
-   *   RedirectResponse represents an HTTP response doing a redirect.
+   * @return \Symfony\Component\HttpFoundation\Response|\Symfony\Component\HttpFoundation\RedirectResponse
+   *   Either a Response containing HTML or a RedirectResponse representing an
+   *   HTTP response doing a redirect.
    *
    * @throws \Drupal\Core\TempStore\TempStoreException
    */
   public function processResponse($payable_item_id) {
-
     try {
       $this->payableItemId = $payable_item_id;
-      $this->paymentSharedTempStore = \Drupal::service('tempstore.shared')->get('commerce_realex');
-      $payable = $this->paymentSharedTempStore->get($payable_item_id);
+      $this->paymentSharedTempStore = \Drupal::service('tempstore.shared')
+        ->get('commerce_realex');
       $payable_item_class = $this->paymentSharedTempStore->get($payable_item_id)['class'];
       $this->payableItem = $payable_item_class::createFromPaymentSharedTempStore($payable_item_id);
     }
-   catch (BuilderException $e) {
-     // Handle builder errors.
-     \Drupal::logger('commerce_realex')->error($e->getMessage());
-   }
-   catch (ConfigurationException $e) {
-     // Handle errors related to your services configuration.
-     \Drupal::logger('commerce_realex')->error($e->getMessage());
-   }
-   catch (GatewayException $e) {
-     // Handle gateway errors/exceptions.
-     \Drupal::logger('commerce_realex')->error($e->getMessage());
-   }
-   catch (UnsupportedTransactionException $e) {
-     // Handle errors when the configured gateway doesn't support
-     // desired transaction.
-     \Drupal::logger('commerce_realex')->error($e->getMessage());
-   }
-   catch (ApiException $e) {
-     // Handle all other Global Payments errors.
-     \Drupal::logger('commerce_realex')->error($e->getMessage());
-   }
     catch (\Exception $e) {
-      // Handle all other errors.
       \Drupal::logger('commerce_realex')->error($e->getMessage());
     }
 
@@ -106,53 +87,27 @@ class RealexHppResponse extends ControllerBase {
 
     try {
       // Create the response object from the response JSON.
-      // Get type of payment method from config because of different returned data structure.
-      if ($realex_config['realex_payment_method'] == 'lightbox') {
+      // Get type of payment method from config because of different returned
+      // data structure.
+      if ($realex_config['realex_payment_method'] === 'lightbox') {
         $responseJson = $_POST['hppResponse'];
-        $parsedResponse = $service->parseResponse($responseJson, true);
-        $orderId = $parsedResponse->orderId; // GTI5Yxb0SumL_TkDMCAxQA
-        $result = $parsedResponse->responseCode; // 00
-        $globalPaymentsMessage = $parsedResponse->responseMessage; // [ test system ] Authorised
-        $responseValues = $parsedResponse->responseValues; // get values accessible by key
-        $pasRef = $parsedResponse->responseValues['PASREF'];
+        $parsedResponse = $service->parseResponse($responseJson, TRUE);
+        $result = $parsedResponse->responseCode;
+        $globalPaymentsMessage = $parsedResponse->responseMessage;
+        $responseValues = $parsedResponse->responseValues;
         $clean_data = stripslashes($responseValues['SUPPLEMENTARY_DATA']);
-        $supplementary_data = json_decode($clean_data);
+        $supplementary_data = json_decode($clean_data, FALSE);
       }
       else {
         $parsedResponse = $_POST;
-        $orderId = $parsedResponse['ORDER_ID'];
         $result = $parsedResponse['RESULT'];
         $globalPaymentsMessage = $parsedResponse['MESSAGE'];
-        $responseValues = $parsedResponse;
-        $pasRef = $parsedResponse['PASREF'];
         $clean_data = stripslashes($parsedResponse['SUPPLEMENTARY_DATA']);
-        $supplementary_data = json_decode($clean_data);
+        $supplementary_data = json_decode($clean_data, FALSE);
         $authCode = $parsedResponse['AUTHCODE'];
       }
     }
-    catch (BuilderException $e) {
-      // Handle builder errors.
-      \Drupal::logger('commerce_realex')->error($e->getMessage());
-    }
-    catch (ConfigurationException $e) {
-      // Handle errors related to your services configuration.
-      \Drupal::logger('commerce_realex')->error($e->getMessage());
-    }
-    catch (GatewayException $e) {
-      // Handle gateway errors/exceptions.
-      \Drupal::logger('commerce_realex')->error($e->getMessage());
-    }
-    catch (UnsupportedTransactionException $e) {
-      // Handle errors when the configured gateway doesn't support
-      // desired transaction.
-      \Drupal::logger('commerce_realex')->error($e->getMessage());
-    }
-    catch (ApiException $e) {
-      // Handle all other Global Payments errors.
-      \Drupal::logger('commerce_realex')->error($e->getMessage());
-    }
     catch (\Exception $e) {
-      // Handle all other errors.
       \Drupal::logger('commerce_realex')->error($e->getMessage());
     }
 
@@ -160,14 +115,16 @@ class RealexHppResponse extends ControllerBase {
     // We sent this to Realex in the request JSON, expect to get it back.
     $this->payableItemId = $supplementary_data->temporary_payable_item_id;
 
-    // Retrieve object representing temporary record from paymentSharedTempStore.
+    // Retrieve object representing temporary record from
+    // paymentSharedTempStore.
     $payable_item_class = $this->paymentSharedTempStore->get($this->payableItemId)['class'];
-    /* @var Drupal\commerce_realex\PayableItemInterface */
+    /* @var \Drupal\commerce_realex\PayableItemInterface */
     $this->payableItem = $payable_item_class::createFromPaymentSharedTempStore($this->payableItemId);
 
     // Check stuff is OK.
     if ($result == '00') {
-      \Drupal::logger('realex success')->error('we have a successful transaction');
+      \Drupal::logger('realex success')
+        ->error('we have a successful transaction');
       // Display a message.
       // @todo - Allow user to override this.
       $currency_formatter = \Drupal::service('commerce_price.currency_formatter');
@@ -181,13 +138,11 @@ class RealexHppResponse extends ControllerBase {
       $this->payableItem->setValue('message', $globalPaymentsMessage);
       $this->payableItem->saveSharedTempStore($this->payableItemId);
 
-      // Redirect the user to the "Successful Payment" callback.
-      $success_callback = 'commerce_payment.checkout.return';
-      return $this->redirect_back($realex_config['realex_payment_method'], TRUE);
+      return $this->redirectBack($realex_config['realex_payment_method'], TRUE);
     }
 
     // Otherwise something went wrong with payment.
-
+    //
     // @todo tell the user the outcome!
     // @todo get human-readable message from realex response
     // @todo take action based on which realex response we get
@@ -199,19 +154,27 @@ class RealexHppResponse extends ControllerBase {
     $this->paymentFailureTempStore = \Drupal::service('tempstore.shared')
       ->get('commerce_realex_failure');
     $this->paymentFailureTempStore->set('payment', $parsedResponse);
-    return $this->redirect_back($realex_config['realex_payment_method'], FALSE);
 
+    return $this->redirectBack($realex_config['realex_payment_method'], FALSE);
   }
 
   /**
-   * Handle what happens on successful transaction.
+   * Handle what happens on transaction.
    *
    * Lightbox needs a Redirect response.
    * Redirect needs HTML response.
    *
-   * Parameter: $method string
+   * @param string $method
+   *   The method which was used for the payment.
+   * @param bool $success
+   *   TRUE if the transaction was successful, FALSE otherwise.
+   *
+   * @return \Symfony\Component\HttpFoundation\Response|\Symfony\Component\HttpFoundation\RedirectResponse
+   *   Either a Response containing HTML for method 'redirect' or a
+   *   RedirectResponse representing an HTTP response doing a redirect
+   *   otherwise.
    */
-  public function redirect_back($method, $success) {
+  public function redirectBack($method, $success) {
     $success_callback = 'commerce_payment.checkout.return';
     $failure_callback = 'commerce_realex.payment_failure';
     if ($success) {
@@ -220,8 +183,9 @@ class RealexHppResponse extends ControllerBase {
     else {
       $callback = $failure_callback;
     }
-    // Redirect requires HTML to be returned. Lightbox can, ironically, handle a redirect.
-    if ($method == 'redirect') {
+    // Redirect requires HTML to be returned. Lightbox can, ironically, handle
+    // a redirect.
+    if ($method === 'redirect') {
       if ($success) {
         $url = Url::fromRoute($callback,
           [
@@ -246,20 +210,26 @@ class RealexHppResponse extends ControllerBase {
       }
       $html = '<style type="text/css">body {display: none;}</style>';
       $html .= '<script type="text/javascript"> window.location = "' . $url->toString() . '";</script>';
-      print $html;
-      return '';
-    }
-    else {
-      \Drupal::logger('realex redirect')
-      ->notice('doing lightbox redirect');
-      // We'll make Lightbox the default for now.
-      return $this->redirect($callback,
-       [
-          'commerce_order' => $this->payableItem->getValue('commerce_order_id'),
-          'step' => 'payment',
-        ],
-        ['query' => ['payable_item_id' => $this->payableItemId],]
+
+      $response = new Response(
+        $html,
+        Response::HTTP_OK,
+        ['content-type' => 'text/html']
       );
+
+      return $response;
     }
+
+    \Drupal::logger('realex redirect')->notice('doing lightbox redirect');
+
+    // We'll make Lightbox the default for now.
+    return $this->redirect($callback,
+      [
+        'commerce_order' => $this->payableItem->getValue('commerce_order_id'),
+        'step' => 'payment',
+      ],
+      ['query' => ['payable_item_id' => $this->payableItemId]]
+    );
   }
+
 }

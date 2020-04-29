@@ -6,11 +6,6 @@ use Drupal\Core\Controller\ControllerBase;
 use GlobalPayments\Api\Entities\Address;
 use GlobalPayments\Api\Entities\Enums\AddressType;
 use GlobalPayments\Api\Entities\Enums\HppVersion;
-use GlobalPayments\Api\Entities\Exceptions\ApiException;
-use GlobalPayments\Api\Entities\Exceptions\BuilderException;
-use GlobalPayments\Api\Entities\Exceptions\ConfigurationException;
-use GlobalPayments\Api\Entities\Exceptions\GatewayException;
-use GlobalPayments\Api\Entities\Exceptions\UnsupportedTransactionException;
 use GlobalPayments\Api\Entities\HostedPaymentData;
 use GlobalPayments\Api\HostedPaymentConfig;
 use GlobalPayments\Api\Services\HostedService;
@@ -23,11 +18,11 @@ use Symfony\Component\HttpFoundation\Response;
 class RealexHppRequest extends ControllerBase {
 
   /**
-   * The user private payment temp-store.
+   * The shared payment temp-store.
    *
-   * @var \Drupal\user\PrivateTempStore
+   * @var \Drupal\Core\TempStore\SharedTempStore
    */
-  protected $paymentTempStore;
+  protected $paymentSharedTempStore;
 
   /**
    * The payable item.
@@ -55,7 +50,8 @@ class RealexHppRequest extends ControllerBase {
   public function buildJson($payable_item_id) {
     try {
       $this->payableItemId = $payable_item_id;
-      $this->paymentSharedTempStore = \Drupal::service('tempstore.shared')->get('commerce_realex');
+      $this->paymentSharedTempStore = \Drupal::service('tempstore.shared')
+        ->get('commerce_realex');
       $payable_item_class = $this->paymentSharedTempStore->get($payable_item_id)['class'];
       $this->payableItem = $payable_item_class::createFromPaymentSharedTempStore($payable_item_id);
     }
@@ -105,7 +101,8 @@ class RealexHppRequest extends ControllerBase {
       ->getString());
     $billingAddress->streetAddress3 = $this->cleanString($this->payableItem->getValue('streetAddress3')
       ->getString());
-    $billingAddress->city = $this->cleanString($this->payableItem->getValue('city')->getString());
+    $billingAddress->city = $this->cleanString($this->payableItem->getValue('city')
+      ->getString());
     $billingAddress->postalCode = $this->cleanString($this->payableItem->getValue('postalCode')
       ->getString());
     $billingAddress->country = $numeric_country_code;
@@ -132,29 +129,7 @@ class RealexHppRequest extends ControllerBase {
 
       return $response;
     }
-    catch (BuilderException $e) {
-      // Handle builder errors.
-      \Drupal::logger('commerce_realex')->error($e->getMessage());
-    }
-    catch (ConfigurationException $e) {
-      // Handle errors related to your services configuration.
-      \Drupal::logger('commerce_realex')->error($e->getMessage());
-    }
-    catch (GatewayException $e) {
-      // Handle gateway errors/exceptions.
-      \Drupal::logger('commerce_realex')->error($e->getMessage());
-    }
-    catch (UnsupportedTransactionException $e) {
-      // Handle errors when the configured gateway doesn't support
-      // desired transaction.
-      \Drupal::logger('commerce_realex')->error($e->getMessage());
-    }
-    catch (ApiException $e) {
-      // Handle all other Global Payments errors.
-      \Drupal::logger('commerce_realex')->error($e->getMessage());
-    }
     catch (\Exception $e) {
-      // Handle all other errors.
       \Drupal::logger('commerce_realex')->error($e->getMessage());
     }
   }
@@ -166,12 +141,14 @@ class RealexHppRequest extends ControllerBase {
    *   A text string.
    *
    * @return string
+   *   The sanitized string.
    */
-  function cleanString($input) {
+  public function cleanString($input) {
     // Realex's docs say: ^[\p{L}\p{M}\p{Blank}\p{N}\/\.\-\_\'\,]*$
     // which is Java-style. PHP version below.
     return preg_replace("/[^[:alnum:][:space:]\-\_\.\,\']/u", ' ', $input);
   }
+
   /**
    * Returns a numeric country code.
    *

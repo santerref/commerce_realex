@@ -1,5 +1,10 @@
 <?php
 
+/**
+ * @file
+ * Various hooks for the commerce_realex module.
+ */
+
 use Drupal\Core\Form\FormStateInterface;
 
 /**

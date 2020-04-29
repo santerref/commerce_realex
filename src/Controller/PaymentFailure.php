@@ -13,6 +13,34 @@ use Drupal\Core\Url;
 class PaymentFailure extends Controllerbase {
 
   /**
+   * The shared payment temp-store.
+   *
+   * @var \Drupal\Core\TempStore\SharedTempStore
+   */
+  protected $paymentSharedTempStore;
+
+  /**
+   * The shared failed payment temp-store.
+   *
+   * @var \Drupal\Core\TempStore\SharedTempStore
+   */
+  protected $paymentFailureTempStore;
+
+  /**
+   * The payable item.
+   *
+   * @var \Drupal\commerce_realex\PayableItemInterface
+   */
+  protected $payableItem;
+
+  /**
+   * The payable item UUID.
+   *
+   * @var string
+   */
+  protected $payableItemId;
+
+  /**
    * Route controller method.
    *
    * @param string $payable_item_id
@@ -31,7 +59,8 @@ class PaymentFailure extends Controllerbase {
     $this->paymentFailureTempStore = \Drupal::service('tempstore.shared')
       ->get('commerce_realex_failure');
     $payment = $this->paymentFailureTempStore->get('payment');
-    \Drupal::logger('payment failed')->error('Global Payments returned:<br/><pre>' . print_r($payment, TRUE) . '</pre>');
+    \Drupal::logger('payment failed')
+      ->error('Global Payments returned:<br/><pre>' . print_r($payment, TRUE) . '</pre>');
     // Redirect failure returns an array. Lightbox gives an object.
     if (!is_object($payment)) {
       $message = $payment['MESSAGE'];
@@ -76,14 +105,16 @@ class PaymentFailure extends Controllerbase {
    *
    * @return \Symfony\Component\HttpFoundation\RedirectResponse
    *   A RedirectResponse Object to the Global Payments servers.
+   *
+   * @throws \Drupal\Core\TempStore\TempStoreException
    */
   public function retryPayment($payable_item_id) {
     try {
       $this->payableItemId = $payable_item_id;
       // @todo - Generalise when new payments come on board.
-      $this->paymentTempStore = \Drupal::service('tempstore.shared')
+      $this->paymentSharedTempStore = \Drupal::service('tempstore.shared')
         ->get('commerce_realex');
-      $this->payableItem = $this->paymentTempStore->get($payable_item_id);
+      $this->payableItem = $this->paymentSharedTempStore->get($payable_item_id);
     }
     catch (\Exception $e) {
       \Drupal::logger('commerce_realex')->error($e->getMessage());
@@ -101,7 +132,7 @@ class PaymentFailure extends Controllerbase {
     ];
 
     // Save it to private temp store under the UUID "payment object" key.
-    $this->paymentTempStore->set($uuid, $storage_data);
+    $this->paymentSharedTempStore->set($uuid, $storage_data);
 
     return $this->redirect('commerce_realex.payment_form', ['payable_item_id' => $uuid]);
   }

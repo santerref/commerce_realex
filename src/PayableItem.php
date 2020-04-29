@@ -15,8 +15,9 @@ class PayableItem implements PayableItemInterface {
   protected $paymentTempStore;
 
   /**
-   * @var \Drupal\user\SharedTempStore
+   * The shared payment temp-store.
    *
+   * @var \Drupal\Core\TempStore\SharedTempStore
    */
   protected $paymentSharedTempStore;
 
@@ -40,7 +41,8 @@ class PayableItem implements PayableItemInterface {
     $this->paymentTempStore = \Drupal::service('user.private_tempstore')
       ->get('commerce_realex');
     /** @var \Drupal\user\SharedTempStore */
-    $this->paymentSharedTempStore = \Drupal::service('tempstore.shared')->get('commerce_realex');
+    $this->paymentSharedTempStore = \Drupal::service('tempstore.shared')
+      ->get('commerce_realex');
   }
 
   /**
@@ -86,13 +88,17 @@ class PayableItem implements PayableItemInterface {
    * We don't need to save anything about the Payment itself permanently.
    * Items using this class can use the Realex Order ID as payment ID.
    *
+   * @param string $uuid
+   *   The UUID of the PayableItem.
+   *
    * @return string
    *   The key the object was stored under in the Shared temp Store;
    *
-   * @todo corresponding method to create from temp store, by UUID.
+   * @throws \Drupal\Core\TempStore\TempStoreException
    *
    * @todo ROAD MAP
    *  - abstract some of this to a PermitInterface?
+   * @todo corresponding method to create from temp store, by UUID.
    */
   public function saveSharedTempStore($uuid = NULL) {
     $uuid_service = \Drupal::service('uuid');
@@ -106,30 +112,30 @@ class PayableItem implements PayableItemInterface {
       'values' => $this->values,
     ];
 
-    // Save it to private temp store under the UUID "payment object" key
+    // Save it to private temp store under the UUID "payment object" key.
     $this->paymentSharedTempStore->set($uuid, $storage_data);
+
     return $uuid;
   }
 
-   /**
+  /**
    * Retrieve a payable from Shared Temp Store.
    *
-   * @param $uuid
+   * @param string $uuid
    *   A UUID previously used to store data in the $paymentSharedTempStore.
    *
-   * @return Drupal\commerce_realex\PayableItem
+   * @return \Drupal\commerce_realex\PayableItem
+   *   The retrieved payable item.
    *
    * @todo ROAD-MAP
    *   - formalize this in some interface, e.g. PayableItem
    */
   public static function createFromPaymentSharedTempStore(string $uuid) {
-
     $payable = new static();
 
     $temp_item = $payable->paymentSharedTempStore->get($uuid);
 
     // @todo validate that the $temp_item['class'] matches __CLASS__
-
     foreach ($temp_item['values'] as $key => $value) {
       $payable->setValue($key, $value);
     }
