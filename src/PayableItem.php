@@ -164,7 +164,7 @@ class PayableItem implements PayableItemInterface {
   public function getPayableAmount() {
     // @todo Could this be more robust by looking up the permit type (GUID)?
     if (isset($this->values['payable_amount'])) {
-      return (int) $this->values['payable_amount'];
+      return round((float) $this->values['payable_amount'], 2);
     }
 
     throw new \InvalidArgumentException('Amount not set.');
